@@ -22,6 +22,38 @@ The `logcheck-filter` CLI tool provides a standalone way to filter log files usi
 - ✅ **Statistics** - Processing summaries and match rates
 - ✅ **Filtering modes** - Show all, violations only, or unmatched entries
 
+## 📦 Installation & Downloads
+
+### Pre-built Releases
+
+Download pre-built binaries from [GitHub Releases](../../releases) for multiple platforms:
+
+**CLI Tools:**
+- `logcheck-filter-linux-amd64.tar.gz` (Linux x86_64, glibc)
+- `logcheck-filter-linux-amd64-musl.tar.gz` (Alpine Linux x86_64)
+- `logcheck-filter-linux-arm64.tar.gz` (Linux ARM64, glibc)
+- `logcheck-filter-linux-arm64-musl.tar.gz` (Alpine Linux ARM64)
+- `logcheck-filter-darwin-amd64.tar.gz` (macOS Intel)
+- `logcheck-filter-darwin-arm64.tar.gz` (macOS Apple Silicon)
+- `logcheck-filter-windows-amd64.zip` (Windows x64)
+
+**WASM Filter:**
+- `fluentbit-wasm-filter.tar.gz` (WebAssembly module)
+
+**Shared Libraries:**
+- `liblogcheck-plugin-*.tar.gz` (Native plugin libraries for various platforms)
+
+### Container Images
+
+```bash
+# Pull the latest multi-arch image
+docker pull ghcr.io/your-org/fluent-bit-logcheck:latest
+
+# Platform-specific pulls
+docker pull --platform linux/amd64 ghcr.io/your-org/fluent-bit-logcheck:latest
+docker pull --platform linux/arm64 ghcr.io/your-org/fluent-bit-logcheck:latest
+```
+
 ## 🚀 Quick Start
 
 ### Fluent-Bit WASM Filter
@@ -61,7 +93,7 @@ fluent-bit -c fluent-bit.conf
 
 ```bash
 # Build the CLI tool
-cargo build --release --bin logcheck-filter --target x86_64-apple-darwin
+cargo build --release --bin logcheck-filter
 
 # Filter a log file
 logcheck-filter --rules /etc/logcheck file /var/log/syslog
@@ -277,15 +309,16 @@ Output:
 
 ### Container Deployment
 
+### Container Deployment
+
 **Docker Compose Example:**
 ```yaml
 version: '3.8'
 services:
   fluent-bit:
-    image: fluent/fluent-bit:latest
+    image: ghcr.io/your-org/fluent-bit-logcheck:latest
     volumes:
       - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
-      - ./target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm:/opt/filters/logcheck.wasm
       - /etc/logcheck:/etc/logcheck:ro
       - /var/log:/var/log:ro
       - /run/systemd/journal:/run/systemd/journal:ro
@@ -294,6 +327,8 @@ services:
     cap_add:
       - SYS_PTRACE  # For systemd journal access
 ```
+
+The project publishes multi-architecture container images to GitHub Container Registry with support for `linux/amd64` and `linux/arm64` platforms.
 
 **Kubernetes Deployment:**
 ```yaml
@@ -343,52 +378,107 @@ spec:
 
 ### For CLI Tool
 
-* Rust compiler (for native builds, add your target: `rustup target add x86_64-apple-darwin` or `x86_64-unknown-linux-gnu`)
-* Cargo, for dependency management
-* Logcheck rules directory (e.g., `/etc/logcheck` from the `logcheck-database` package)
+* Rust compiler with your target installed:
+  - Linux: `rustup target add x86_64-unknown-linux-gnu` or `aarch64-unknown-linux-gnu`
+  - macOS: `rustup target add x86_64-apple-darwin` or `aarch64-apple-darwin`
+  - Windows: `rustup target add x86_64-pc-windows-msvc`
+  - Alpine Linux: `rustup target add x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl`
+* Cargo for dependency management
+* Logcheck rules directory (e.g., `/etc/logcheck` from `logcheck-database` package)
 
 ### For WASM Filter
 
-* Rust compiler with the `wasm32-unknown-unknown` target set up (i.e. run `rustup target install wasm32-unknown-unknown`)
-* Cargo, for getting Rust msgpack libraries
-* Docker, for testing the filter against Fluentbit
-* Make, for various shortcut targets used in development
-* Optionally, you may want the [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) and its `wasm2wat` tool for looking at the compiled output programs
+* Rust compiler with WASM target: `rustup target add wasm32-unknown-unknown`
+* Cargo for Rust dependencies
+* Docker for testing against Fluent-Bit
+* Make for development shortcuts
+* Optional: [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) for WASM analysis
+
+### CI/CD Pipeline
+
+The project includes comprehensive GitHub Actions workflows:
+- **build-and-test.yml**: Main build pipeline with testing across multiple architectures
+- **container.yml**: Docker image builds for `linux/amd64` and `linux/arm64`
+- **release.yml**: Automated releases with multi-platform binaries
+- **docs.yml**: API documentation generation and GitHub Pages deployment
+- **test-logcheck-rules.yml**: Integration tests with production logcheck rules
 
 ### Building
 
-**CLI Tool:**
-```bash
-# Development build
-cargo build --bin logcheck-filter --target x86_64-apple-darwin
+The CI system automatically builds multiple targets:
 
-# Release build (optimized)
-cargo build --release --bin logcheck-filter --target x86_64-apple-darwin
-
-# The binary will be at: target/x86_64-apple-darwin/release/logcheck-filter
-```
+**CLI Binary Targets:**
+- `x86_64-unknown-linux-gnu` (Linux x86_64)
+- `aarch64-unknown-linux-gnu` (Linux ARM64) 
+- `x86_64-apple-darwin` (macOS Intel)
+- `aarch64-apple-darwin` (macOS Apple Silicon)
+- `x86_64-unknown-linux-musl` (Alpine Linux x86_64, release only)
+- `aarch64-unknown-linux-musl` (Alpine Linux ARM64, release only)
+- `x86_64-pc-windows-msvc` (Windows x64, release only)
 
 **WASM Filter:**
+- `wasm32-unknown-unknown` (WebAssembly)
+
+**Shared Library Plugin:**
+- Same targets as CLI for Linux/macOS (generates `.so`/`.dylib`)
+
+**Container Images:**
+- `linux/amd64`, `linux/arm64` (published to GitHub Container Registry)
+
+**Local Development:**
 ```bash
-make build
+# Build CLI for your platform
+cargo build --release --bin logcheck-filter
+
+# Build WASM filter  
+cargo build --release --target wasm32-unknown-unknown --lib
+
+# Or use make shortcuts (auto-detects your platform)
+make build        # WASM filter
+make build-cli    # CLI for native platform
+make build-plugin # Shared library for native platform
+
+# Build for all platforms (requires cross-compilation setup)
+make build-all-cli    # All CLI targets
+make build-all-plugin # All plugin targets
+
+# View all available targets
+make help
+```
+
+**Cross-compilation setup** (for build-all targets):
+```bash
+# Install targets
+rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+rustup target add x86_64-apple-darwin aarch64-apple-darwin  
+rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
+rustup target add x86_64-pc-windows-msvc wasm32-unknown-unknown
+
+# May require additional system dependencies for cross-compilation
 ```
 
 ### Testing
 
-**CLI Tool:**
-```bash
-# Run all tests (requires native target)
-cargo test --target x86_64-apple-darwin
+**Automated CI Testing:**
+- **Format & Lint**: Rust formatting and clippy checks
+- **Unit Tests**: All tests on `x86_64-unknown-linux-gnu`
+- **Code Coverage**: Generated with `cargo-tarpaulin`
+- **Security Audit**: Vulnerability scanning on PRs
+- **Binary Size Analysis**: Tracks CLI and WASM binary size
+- **Production Rules**: Tests against real logcheck-database package
+- **Container**: Multi-architecture image validation
 
-# Test with sample logs
-echo "Failed password for admin" | ./target/x86_64-apple-darwin/release/logcheck-filter --rules /etc/logcheck stdin
-```
-
-**WASM Filter:**
+**Manual Testing:**
 ```bash
-make test_json
-# or
-make test_msgpack
+# Run all tests
+cargo test
+
+# Test CLI with sample logs
+echo "Failed password for admin" | ./target/release/logcheck-filter --rules /etc/logcheck stdin
+
+# Test WASM filter with Docker
+make test_json     # Test JSON format
+make test_msgpack  # Test MessagePack format
 ```
 
 Expected output:

@@ -150,25 +150,46 @@ jobs:
 
   build-cli:
     name: Build CLI - ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     needs: [format, clippy, test, coverage]
     strategy:
       fail-fast: false
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
             binary-suffix: ''
+            use-cross: false
           - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
             binary-suffix: ''
+            use-cross: true
           - target: x86_64-apple-darwin
+            os: macos-13  # Intel runners
             binary-suffix: ''
+            use-cross: false
           - target: aarch64-apple-darwin
+            os: macos-14  # Apple Silicon runners
             binary-suffix: ''
+            use-cross: false
 
     steps:
       - uses: actions/checkout@v4
       
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      
+      - name: Build CLI natively
+        if: ${{ !matrix.use-cross }}
+        run: cargo build --locked --release --bin logcheck-filter --target ${{ matrix.target }}
+      
       - name: Build CLI with cross-compilation
+        if: ${{ matrix.use-cross }}
         uses: houseabsolute/actions-rust-cross@v1
         with:
           target: ${{ matrix.target }}
@@ -176,7 +197,6 @@ jobs:
           args: "--locked --release --bin logcheck-filter"
           strip: true
           use-rust-cache: true
-          force-use-cross: ${{ contains(matrix.target, 'apple') }}
       
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
