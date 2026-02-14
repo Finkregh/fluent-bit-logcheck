@@ -1,5 +1,7 @@
 # Logcheck Fluent-Bit Filter & CLI Tool
 
+**_This is a work in progress, might eat your cat!_**
+
 This project provides both a **Fluent-Bit WASM filter** and a **standalone CLI tool** for filtering logs using [logcheck](https://packages.debian.org/sid/logcheck) rules.
 
 ## 🎯 Overview
