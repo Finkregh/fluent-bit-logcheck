@@ -1,9 +1,10 @@
 pub mod file;
+#[cfg(target_os = "linux")]
 pub mod journald;
 pub mod stdin;
 
-use crate::cli::Result;
 use crate::cli::args::InputSource;
+use crate::cli::Result;
 
 /// Trait for reading log entries from various sources
 pub trait LogInput {
@@ -20,6 +21,7 @@ pub fn create_input(source: &InputSource) -> Result<Box<dyn LogInput>> {
     match source {
         InputSource::File { path } => Ok(Box::new(file::FileInput::new(path)?)),
         InputSource::Stdin => Ok(Box::new(stdin::StdinInput::new())),
+        #[cfg(target_os = "linux")]
         InputSource::Journald {
             unit,
             follow,
@@ -45,6 +47,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "linux")]
     fn test_create_journald_input() {
         let source = InputSource::Journald {
             unit: Some("sshd".to_string()),

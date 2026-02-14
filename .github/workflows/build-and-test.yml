@@ -171,6 +171,7 @@ jobs:
           args: "--locked --release --bin logcheck-filter"
           strip: true
           use-rust-cache: true
+          force-use-cross: ${{ contains(matrix.target, 'apple') || contains(matrix.target, 'windows') }}
       
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4

@@ -1,6 +1,6 @@
-use crate::cli::Result;
 use crate::cli::args::ShowMode;
 use crate::cli::output::{FilteredEntry, LogOutput};
+use crate::cli::Result;
 use crate::rules::RuleCategory;
 use colored::{ColoredString, Colorize};
 use std::io::{self, Write};

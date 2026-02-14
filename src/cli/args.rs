@@ -46,6 +46,7 @@ pub enum InputSource {
     /// Read from standard input
     Stdin,
     /// Read from systemd journal
+    #[cfg(target_os = "linux")]
     Journald {
         /// Systemd unit to filter
         #[arg(long, help = "Filter by systemd unit")]
@@ -132,6 +133,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "linux")]
     fn test_journald_options() {
         let args = vec![
             "logcheck-filter",
