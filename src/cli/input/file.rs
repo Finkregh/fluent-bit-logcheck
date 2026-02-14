@@ -1,5 +1,5 @@
-use crate::cli::input::LogInput;
 use crate::cli::Result;
+use crate::cli::input::LogInput;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
 use std::path::Path;

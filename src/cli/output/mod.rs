@@ -1,8 +1,8 @@
 pub mod json;
 pub mod text;
 
-use crate::cli::args::{OutputFormat, ShowMode};
 use crate::cli::Result;
+use crate::cli::args::{OutputFormat, ShowMode};
 use crate::rules::RuleCategory;
 use serde::{Deserialize, Serialize};
 use std::fs::File;

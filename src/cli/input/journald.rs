@@ -1,5 +1,5 @@
-use crate::cli::input::LogInput;
 use crate::cli::Result;
+use crate::cli::input::LogInput;
 use anyhow::anyhow;
 use std::io::{BufRead, BufReader};
 use std::process::{ChildStdout, Command, Stdio};

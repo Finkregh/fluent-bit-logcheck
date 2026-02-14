@@ -21,7 +21,7 @@ COPY src ./src
 RUN cargo build --release --target wasm32-unknown-unknown --lib
 
 # Build native CLI binary
-RUN cargo build --release --bin logcheck-filter
+RUN cargo build --release --bin logcheck-filter --target x86_64-unknown-linux-gnu
 
 # Final runtime image with Fluent Bit
 FROM fluent/fluent-bit:4.2.2
@@ -30,7 +30,7 @@ FROM fluent/fluent-bit:4.2.2
 COPY --from=builder /build/target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
 
 # Copy CLI tool
-COPY --from=builder /build/target/release/logcheck-filter /usr/local/bin/
+COPY --from=builder /build/target/x86_64-unknown-linux-gnu/release/logcheck-filter /usr/local/bin/
 
 # Create configuration directory
 RUN mkdir -p /fluent-bit/etc
