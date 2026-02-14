@@ -123,19 +123,30 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   bloat-check:
-    name: Binary Size Analysis
+    name: Binary Size Analysis - ${{ matrix.target.name }}
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        target:
+          - name: "CLI Binary"
+            args: "--release --bin logcheck-filter --crates --target x86_64-unknown-linux-gnu"
+            toolchain: "stable"
+          - name: "WASM Filter"
+            args: "--release --lib --crates --target wasm32-unknown-unknown"
+            toolchain: "stable"
     steps:
       - uses: actions/checkout@v4
       
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@${{ matrix.target.toolchain }}
+        with:
+          targets: wasm32-unknown-unknown
       
       - name: Run Cargo Bloat
         uses: orf/cargo-bloat-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          bloat_args: "--release --bin logcheck-filter --crates --target x86_64-unknown-linux-gnu"
+          bloat_args: "${{ matrix.target.args }}"
 
   build-cli:
     name: Build CLI - ${{ matrix.target }}
@@ -147,14 +158,8 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             binary-suffix: ''
-          - target: x86_64-unknown-linux-musl
-            binary-suffix: ''
           - target: aarch64-unknown-linux-gnu
             binary-suffix: ''
-          - target: aarch64-unknown-linux-musl
-            binary-suffix: ''
-          - target: x86_64-pc-windows-msvc
-            binary-suffix: '.exe'
           - target: x86_64-apple-darwin
             binary-suffix: ''
           - target: aarch64-apple-darwin
@@ -171,7 +176,7 @@ jobs:
           args: "--locked --release --bin logcheck-filter"
           strip: true
           use-rust-cache: true
-          force-use-cross: ${{ contains(matrix.target, 'apple') || contains(matrix.target, 'windows') }}
+          force-use-cross: ${{ contains(matrix.target, 'apple') }}
       
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
@@ -206,7 +211,7 @@ jobs:
           retention-days: 30
 
   build-plugin:
-    name: Build Plugin (.so) - ${{ matrix.target }}
+    name: Build Plugin - ${{ matrix.target }}
     runs-on: ubuntu-latest
     needs: [format, clippy, test, coverage]
     strategy:
@@ -215,11 +220,7 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             lib-extension: 'so'
-          - target: x86_64-unknown-linux-musl
-            lib-extension: 'so'
           - target: aarch64-unknown-linux-gnu
-            lib-extension: 'so'
-          - target: aarch64-unknown-linux-musl
             lib-extension: 'so'
           - target: x86_64-apple-darwin
             lib-extension: 'dylib'
