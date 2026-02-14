@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          generate_release_notes: true
+
+  build-cli:
+    name: Build CLI - ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            binary-suffix: ''
+            archive-name: logcheck-filter-linux-amd64.tar.gz
+          - target: x86_64-unknown-linux-musl
+            binary-suffix: ''
+            archive-name: logcheck-filter-linux-amd64-musl.tar.gz
+          - target: aarch64-unknown-linux-gnu
+            binary-suffix: ''
+            archive-name: logcheck-filter-linux-arm64.tar.gz
+          - target: aarch64-unknown-linux-musl
+            binary-suffix: ''
+            archive-name: logcheck-filter-linux-arm64-musl.tar.gz
+          - target: x86_64-pc-windows-msvc
+            binary-suffix: '.exe'
+            archive-name: logcheck-filter-windows-amd64.zip
+          - target: x86_64-apple-darwin
+            binary-suffix: ''
+            archive-name: logcheck-filter-darwin-amd64.tar.gz
+          - target: aarch64-apple-darwin
+            binary-suffix: ''
+            archive-name: logcheck-filter-darwin-arm64.tar.gz
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build CLI with cross-compilation
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          target: ${{ matrix.target }}
+          command: build
+          args: "--locked --release --bin logcheck-filter"
+          strip: true
+          use-rust-cache: true
+      
+      # Create archive (tar.gz for Unix, zip for Windows)
+      - name: Create archive (Unix)
+        if: matrix.target != 'x86_64-pc-windows-msvc'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ${{ matrix.archive-name }} logcheck-filter
+          mv ${{ matrix.archive-name }} ${{ github.workspace }}/
+      
+      - name: Create archive (Windows)
+        if: matrix.target == 'x86_64-pc-windows-msvc'
+        run: |
+          cd target/${{ matrix.target }}/release
+          7z a ${{ matrix.archive-name }} logcheck-filter.exe
+          mv ${{ matrix.archive-name }} ${{ github.workspace }}/
+      
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.archive-name }}
+
+  build-wasm:
+    name: Build WASM Filter
+    runs-on: ubuntu-latest
+    needs: create-release
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: wasm32-unknown-unknown
+      
+      - name: Build WASM filter
+        run: cargo build --release --target wasm32-unknown-unknown --lib
+      
+      - name: Create archive
+        run: |
+          cd target/wasm32-unknown-unknown/release
+          tar czf fluentbit-wasm-filter.tar.gz fluentbit_rustwasmfilter.wasm
+          mv fluentbit-wasm-filter.tar.gz ${{ github.workspace }}/
+      
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: fluentbit-wasm-filter.tar.gz
+
+  build-plugin:
+    name: Build Plugin (.so) - ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            lib-extension: 'so'
+            archive-name: liblogcheck-plugin-linux-amd64.tar.gz
+          - target: x86_64-unknown-linux-musl
+            lib-extension: 'so'
+            archive-name: liblogcheck-plugin-linux-amd64-musl.tar.gz
+          - target: aarch64-unknown-linux-gnu
+            lib-extension: 'so'
+            archive-name: liblogcheck-plugin-linux-arm64.tar.gz
+          - target: aarch64-unknown-linux-musl
+            lib-extension: 'so'
+            archive-name: liblogcheck-plugin-linux-arm64-musl.tar.gz
+          - target: x86_64-apple-darwin
+            lib-extension: 'dylib'
+            archive-name: liblogcheck-plugin-darwin-amd64.tar.gz
+          - target: aarch64-apple-darwin
+            lib-extension: 'dylib'
+            archive-name: liblogcheck-plugin-darwin-arm64.tar.gz
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build shared library with cross-compilation
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          target: ${{ matrix.target }}
+          command: build
+          args: "--locked --release --lib"
+          strip: true
+          use-rust-cache: true
+      
+      - name: Create archive
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ${{ matrix.archive-name }} liblogcheck_fluent_bit_filter.${{ matrix.lib-extension }}
+          mv ${{ matrix.archive-name }} ${{ github.workspace }}/
+      
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.archive-name }}

@@ -1,0 +1,152 @@
+name: Test Logcheck Rules
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-rules:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install logcheck-database package
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y logcheck-database
+          echo "📦 Installed logcheck-database"
+          dpkg -L logcheck-database | head -20
+
+      - name: Verify logcheck rules installation
+        run: |
+          echo "📂 Checking logcheck rules directory structure:"
+          ls -la /etc/logcheck/ || echo "⚠️  /etc/logcheck not found"
+          
+          if [ -d /etc/logcheck ]; then
+            echo ""
+            echo "📊 Rule file counts by category:"
+            for dir in cracking.d cracking.ignore.d violations.d violations.ignore.d ignore.d.server ignore.d.workstation ignore.d.paranoid; do
+              if [ -d /etc/logcheck/$dir ]; then
+                count=$(find /etc/logcheck/$dir -type f | wc -l)
+                echo "  - $dir: $count files"
+              fi
+            done
+            
+            echo ""
+            echo "📝 Sample rules from violations.d:"
+            head -5 /etc/logcheck/violations.d/* 2>/dev/null || echo "No files found"
+          fi
+
+      - name: Create test with production rules
+        run: |
+          cat > src/ci_test.rs << 'EOF'
+          #[cfg(test)]
+          #[test]
+          fn test_load_system_logcheck_rules() {
+              use crate::rules::LogcheckDatabase;
+              
+              let rules_path = std::path::Path::new("/etc/logcheck");
+              
+              if !rules_path.exists() {
+                  println!("⚠️  Skipping - /etc/logcheck not found in CI");
+                  return;
+              }
+              
+              println!("📂 Loading rules from: {}", rules_path.display());
+              
+              match LogcheckDatabase::load_from_directory(rules_path) {
+                  Ok(database) => {
+                      let stats = database.get_stats();
+                      println!("\n✅ Successfully loaded production rules!");
+                      println!("📊 Statistics:");
+                      for (category, count) in stats.iter() {
+                          println!("  - {}: {}", category, count);
+                      }
+                      
+                      // Test with sample messages
+                      let test_messages = vec![
+                          ("sshd[1234]: Failed password for root", "SSH auth failure"),
+                          ("systemd[1]: Started Session 42", "SystemD session"),
+                          ("MyApp: Custom message", "Unclassified"),
+                      ];
+                      
+                      println!("\n🧪 Testing rule matching:");
+                      for (msg, desc) in test_messages {
+                          let result = database.match_message(msg);
+                          println!("  {} - {:?}", desc, result);
+                      }
+                  }
+                  Err(e) => {
+                      eprintln!("❌ Error loading rules: {:?}", e);
+                      panic!("Failed to load production logcheck rules");
+                  }
+              }
+          }
+          EOF
+          
+          # Add module to lib.rs
+          if ! grep -q "mod ci_test;" src/lib.rs; then
+            echo "" >> src/lib.rs
+            echo "#[cfg(test)]" >> src/lib.rs  
+            echo "mod ci_test;" >> src/lib.rs
+          fi
+
+      - name: Run rule loading tests
+        run: |
+          cargo test --lib test_load_system_logcheck_rules -- --nocapture
+
+      - name: Run all tests
+        run: |
+          cargo test --lib
+
+      - name: Test rule matching behavior
+        run: |
+          cargo test --lib -- --nocapture | grep -E "(✅|❌|📊|🧪)"
+
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "## Logcheck Rules Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Rule Loading" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -d /etc/logcheck ]; then
+            echo "✅ logcheck-database package installed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Rule Statistics" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Category | File Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|------------|" >> $GITHUB_STEP_SUMMARY
+            
+            for dir in cracking.d violations.d violations.ignore.d ignore.d.server ignore.d.workstation; do
+              if [ -d /etc/logcheck/$dir ]; then
+                count=$(find /etc/logcheck/$dir -type f | wc -l)
+                echo "| $dir | $count |" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
+          else
+            echo "❌ logcheck-database not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            target/debug/deps/*.log
+            target/test-results.txt
+          retention-days: 7

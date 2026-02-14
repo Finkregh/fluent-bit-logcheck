@@ -1,0 +1,100 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'Cargo.toml', 'README.md']
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+    paths: ['src/**', 'Cargo.toml', 'README.md']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel main deployments
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  # Main documentation deployment to GitHub Pages
+  deploy-main:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: docs
+        
+      - name: Build documentation
+        run: |
+          cargo doc --no-deps --all-features --document-private-items
+          # Create index redirect to main crate
+          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/doc/index.html
+        env:
+          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+          
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: target/doc
+          branch: gh-pages
+          clean: true
+          clean-exclude: pr-preview/  # Preserve PR previews
+          force: false  # Use rebase, not force push
+          single-commit: false
+          git-config-name: github-actions[bot]
+          git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
+
+  # PR preview deployment
+  deploy-preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency: preview-${{ github.ref }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        if: github.event.action != 'closed'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      
+      - name: Setup Rust cache
+        if: github.event.action != 'closed'
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: docs
+        
+      - name: Build documentation
+        if: github.event.action != 'closed'
+        run: |
+          cargo doc --no-deps --all-features --document-private-items
+          # Create index redirect to main crate for PR preview
+          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/doc/index.html
+        env:
+          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+          
+      - name: Deploy PR preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: target/doc
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: auto
+          wait-for-pages-deployment: true
+          qr-code: true
+          comment: true
+          token: ${{ github.token }}
