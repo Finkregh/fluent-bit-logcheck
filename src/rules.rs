@@ -82,7 +82,7 @@ impl LogcheckDatabase {
     }
 
     /// Convert POSIX character classes to Rust regex equivalents
-    /// Logcheck rules use POSIX classes like [[:alnum:]], [[:digit:]], etc.
+    /// Logcheck rules use POSIX classes like \[\[:alnum:\]\], \[\[:digit:\]\], etc.
     /// which are not supported by Rust's regex crate
     fn convert_posix_classes(pattern: &str) -> String {
         let mut result = pattern.to_string();

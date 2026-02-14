@@ -1,39 +1,52 @@
-# Multi-stage build for logcheck-fluent-bit-filter
-FROM rust:1.84-slim AS builder
+# syntax=docker/dockerfile:1.21
+# Multi-stage build for logcheck-fluent-bit-filter using cargo-chef for optimal caching
+# Builds for native architecture only (linux/amd64 on GitHub Actions CI)
 
-WORKDIR /build
+ARG RUST_VERSION=1.85
+FROM rust:${RUST_VERSION}-slim AS chef
 
-# Install required dependencies
-RUN apt-get update && \
-    apt-get install -y pkg-config libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install wasm32 target for building WASM filter
-RUN rustup target add wasm32-unknown-unknown
+# Install cargo-chef for dependency caching
+RUN cargo install cargo-chef
 
-# Copy manifests
+WORKDIR /app
+
+# Prepare recipe - analyzes project structure for caching
+FROM chef AS planner
 COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+COPY xtask/ xtask/
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Copy source code
-COPY src ./src
+# Build dependencies
+FROM chef AS builder
+RUN rustup target add wasm32-unknown-unknown
+COPY --from=planner /app/recipe.json recipe.json
 
-# Build WASM filter (release mode required due to stack constraints)
-RUN cargo build --release --target wasm32-unknown-unknown --lib
+# Cook dependencies for native CLI and WASM target
+# Build sequentially to reduce memory usage
+RUN cargo chef cook --release --recipe-path recipe.json && \
+    cargo chef cook --release --target wasm32-unknown-unknown --recipe-path recipe.json
 
-# Build native CLI binary
-RUN cargo build --release --bin logcheck-filter
+# Build both CLI (native) and WASM filter
+COPY . .
+RUN cargo build --release --bin logcheck-filter && \
+    cargo build --release --target wasm32-unknown-unknown --lib
 
 # Final runtime image with Fluent Bit
 FROM fluent/fluent-bit:4.2.2
 
-# Copy WASM filter
-COPY --from=builder /build/target/wasm32-unknown-unknown/release/fluentbit_rustwasmfilter.wasm /fluent-bit/filters/
+# Copy WASM filter (architecture-independent)
+COPY --from=builder /app/target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
 
-# Copy CLI tool
-COPY --from=builder /build/target/release/logcheck-filter /usr/local/bin/
-
-# Create configuration directory
-RUN mkdir -p /fluent-bit/etc
+# Copy CLI binary (native architecture from default target)
+COPY --from=builder /app/target/release/logcheck-filter /usr/local/bin/logcheck-filter
 
 LABEL org.opencontainers.image.source=https://github.com/finkregh/fluent-bit-logcheck
 LABEL org.opencontainers.image.description="Fluent-bit with logcheck WASM filter and CLI tool"

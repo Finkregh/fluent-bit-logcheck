@@ -1,0 +1,17 @@
+pkgbase = logcheck-filter
+	pkgdesc = CLI tool for filtering logs using logcheck rules
+	pkgver = 0.1.0
+	pkgrel = 1
+	url = https://github.com/Finkregh/fluent-bit-logcheck
+	arch = x86_64
+	license = Apache-2.0
+	license = MIT
+	makedepends = cargo
+	makedepends = rust
+	depends = gcc-libs
+	depends = glibc
+	options = !lto
+	source = logcheck-filter-0.1.0.tar.gz::https://github.com/Finkregh/fluent-bit-logcheck/archive/v0.1.0.tar.gz
+	b2sums = SKIP
+
+pkgname = logcheck-filter

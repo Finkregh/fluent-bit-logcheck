@@ -1,0 +1,66 @@
+# Maintainer: Your Name <your.email@example.com>
+
+pkgname=logcheck-filter
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="CLI tool for filtering logs using logcheck rules"
+arch=('x86_64')
+url="https://github.com/Finkregh/fluent-bit-logcheck"
+license=('Apache-2.0' 'MIT')
+depends=('gcc-libs' 'glibc')
+makedepends=('cargo' 'rust')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+b2sums=('SKIP')
+options=('!lto')
+
+prepare() {
+  cd "$srcdir/fluent-bit-logcheck-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+}
+
+build() {
+  cd "$srcdir/fluent-bit-logcheck-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  export RUSTFLAGS="-C target-cpu=native"
+  
+  # Use cargo-xtask for building (matches CI workflow)
+  cargo xtask build-cli --release
+}
+
+check() {
+  cd "$srcdir/fluent-bit-logcheck-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  export RUSTFLAGS="-C target-cpu=native"
+  
+  cargo test --frozen --release --bin logcheck-filter
+}
+
+package() {
+  cd "$srcdir/fluent-bit-logcheck-$pkgver"
+  
+  # Binary is built for explicit target by xtask
+  install -Dm755 "target/$CARCH-unknown-linux-gnu/release/logcheck-filter" \
+    "$pkgdir/usr/bin/logcheck-filter"
+  
+  # Install man page
+  install -Dm644 "docs/man/logcheck-filter.1" \
+    "$pkgdir/usr/share/man/man1/logcheck-filter.1"
+  
+  # TODO: Shell completions not yet implemented in build.rs
+  # Future: generate completions using clap_complete at build time
+  # See https://github.com/Finkregh/fluent-bit-logcheck/issues/XXX
+  
+  # Install documentation
+  install -Dm644 "README.md" \
+    "$pkgdir/usr/share/doc/$pkgname/README.md"
+  install -Dm644 "docs/cli-reference.md" \
+    "$pkgdir/usr/share/doc/$pkgname/cli-reference.md"
+  install -Dm644 "sample-systemd-rules.txt" \
+    "$pkgdir/usr/share/doc/$pkgname/examples/sample-systemd-rules.txt"
+  
+  # Install license
+  install -Dm644 "LICENSE.md" \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
