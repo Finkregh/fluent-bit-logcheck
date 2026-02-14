@@ -1,6 +1,6 @@
+use crate::cli::Result;
 use crate::cli::input::LogInput;
 use crate::cli::output::{FilteredEntry, LogOutput};
-use crate::cli::Result;
 use crate::rules::{LogcheckDatabase, RuleCategory};
 use std::collections::HashMap;
 
