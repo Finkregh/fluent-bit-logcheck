@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["create_input"],"mod":["file","journald","stdin"],"trait":["LogInput"]};
