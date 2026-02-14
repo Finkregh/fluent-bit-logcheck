@@ -31,6 +31,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
+          targets: wasm32-unknown-unknown
       
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
@@ -71,6 +72,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
+          targets: wasm32-unknown-unknown
       
       - name: Setup Rust cache
         if: github.event.action != 'closed'

@@ -151,7 +151,7 @@ fn to_c_string(s: String) -> *const c_char {
 
 /// Main logcheck filter function for JSON format
 /// Returns: Modified JSON record with logcheck metadata, or NULL to drop the record
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn logcheck_filter_json(
     _tag: *const c_char,
     _tag_len: usize,
@@ -183,7 +183,7 @@ pub extern "C" fn logcheck_filter_json(
 }
 
 /// Test/demo function that adds simple metadata
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn logcheck_demo_json(
     _tag: *const c_char,
     _tag_len: usize,

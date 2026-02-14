@@ -2,8 +2,8 @@ pub mod file;
 pub mod journald;
 pub mod stdin;
 
-use crate::cli::Result;
 use crate::cli::args::InputSource;
+use crate::cli::Result;
 
 /// Trait for reading log entries from various sources
 pub trait LogInput {

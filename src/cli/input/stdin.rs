@@ -1,5 +1,5 @@
-use crate::cli::Result;
 use crate::cli::input::LogInput;
+use crate::cli::Result;
 use std::io::{self, BufRead};
 
 /// Standard input log reader
