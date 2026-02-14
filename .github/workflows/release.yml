@@ -111,7 +111,7 @@ jobs:
       - name: Create archive
         run: |
           cd target/wasm32-unknown-unknown/release
-          tar czf fluentbit-wasm-filter.tar.gz fluentbit_rustwasmfilter.wasm
+          tar czf fluentbit-wasm-filter.tar.gz logcheck_fluent_bit_filter.wasm
           mv fluentbit-wasm-filter.tar.gz ${{ github.workspace }}/
       
       - name: Upload Release Asset

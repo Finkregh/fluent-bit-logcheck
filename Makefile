@@ -24,7 +24,7 @@ test_json: test_deps build
 		${DOCKER_IMAGE_NAME} \
 		/opt/fluent-bit/bin/fluent-bit \
 			-i dummy \
-			-F wasm -p event_format=json -p wasm_path=/build_out/fluentbit_rustwasmfilter.wasm -p function_name=hello_world__json -m '*' \
+			-F wasm -p event_format=json -p wasm_path=/build_out/logcheck_fluent_bit_filter.wasm -p function_name=hello_world__json -m '*' \
 			-o stdout -m '*'
 test_msgpack: test_deps build
 	docker run --rm \
@@ -32,7 +32,7 @@ test_msgpack: test_deps build
 		${DOCKER_IMAGE_NAME} \
 		/opt/fluent-bit/bin/fluent-bit \
 			-i dummy \
-			-F wasm -p event_format=msgpack -p wasm_path=/build_out/fluentbit_rustwasmfilter.wasm -p function_name=hello_world__msgpack -m '*' \
+			-F wasm -p event_format=msgpack -p wasm_path=/build_out/logcheck_fluent_bit_filter.wasm -p function_name=hello_world__msgpack -m '*' \
 			-o stdout -m '*'
 
 # Build CLI tool for native target

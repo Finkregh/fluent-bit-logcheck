@@ -27,7 +27,7 @@ RUN cargo build --release --bin logcheck-filter
 FROM fluent/fluent-bit:4.2.2
 
 # Copy WASM filter
-COPY --from=builder /build/target/wasm32-unknown-unknown/release/fluentbit_rustwasmfilter.wasm /fluent-bit/filters/
+COPY --from=builder /build/target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
 
 # Copy CLI tool
 COPY --from=builder /build/target/release/logcheck-filter /usr/local/bin/
