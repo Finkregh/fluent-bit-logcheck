@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 # Multi-stage build for logcheck-fluent-bit-filter with multi-architecture support
 # Use buildplatform for cross-compilation performance
-FROM --platform=$BUILDPLATFORM rust:1.84-slim AS builder
+FROM --platform=$BUILDPLATFORM rust:1.93-slim AS builder
 
 # Build arguments for multi-architecture support
 ARG BUILDPLATFORM
