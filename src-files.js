@@ -1,0 +1,2 @@
+createSrcSidebar('[["logcheck_filter",["",[],["main.rs"]]],["logcheck_fluent_bit_filter",["",[["cli",[["input",[],["file.rs","journald.rs","mod.rs","stdin.rs"]],["output",[],["json.rs","mod.rs","text.rs"]]],["args.rs","mod.rs","processor.rs"]]],["lib.rs","rules.rs"]]]]');
+//{"start":19,"fragment_lengths":[39,210]}
