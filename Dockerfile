@@ -88,13 +88,8 @@ FROM fluent/fluent-bit:4.2.2
 COPY --from=builder /build/wasm-output/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
 
 # Copy CLI binary for current architecture from output directory
+# Binary is already executable from cargo build, no chmod needed
 COPY --from=builder /build/native-output/logcheck-filter /usr/local/bin/logcheck-filter
-
-# Ensure binary is executable
-RUN chmod +x /usr/local/bin/logcheck-filter
-
-# Create configuration directory
-RUN mkdir -p /fluent-bit/etc
 
 LABEL org.opencontainers.image.source=https://github.com/finkregh/fluent-bit-logcheck
 LABEL org.opencontainers.image.description="Fluent-bit with logcheck WASM filter and CLI tool"
