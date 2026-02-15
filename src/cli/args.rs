@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand, ValueEnum};
+use clap_complete::Shell;
 use std::path::PathBuf;
 
 /// Logcheck-based log filtering tool
@@ -31,6 +32,23 @@ pub struct Cli {
     #[arg(long, help = "Write filtered logs to file")]
     pub output_file: Option<PathBuf>,
 
+    /// Generate CLI documentation in Markdown format
+    #[arg(
+        long,
+        hide = true,
+        help = "Generate CLI documentation in Markdown format"
+    )]
+    pub generate_docs: bool,
+
+    /// Generate shell completion scripts
+    #[arg(
+        long,
+        value_enum,
+        hide = true,
+        help = "Generate shell completion scripts"
+    )]
+    pub generate_completion: Option<Shell>,
+
     /// Input source
     #[command(subcommand)]
     pub input: InputSource,
@@ -46,6 +64,7 @@ pub enum InputSource {
     /// Read from standard input
     Stdin,
     /// Read from systemd journal
+    #[cfg(target_os = "linux")]
     Journald {
         /// Systemd unit to filter
         #[arg(long, help = "Filter by systemd unit")]
@@ -132,6 +151,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "linux")]
     fn test_journald_options() {
         let args = vec![
             "logcheck-filter",

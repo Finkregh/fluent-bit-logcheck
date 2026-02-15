@@ -70,19 +70,19 @@ fn test_load_production_logcheck_rules() {
     let test_cases = vec![
         (
             "Feb  3 10:30:15 server sshd-session[1234]: Failed password for root from 192.168.1.100 port 22 ssh2",
-            "SSH authentication failure - should match Server ignore rules if present"
+            "SSH authentication failure - should match Server ignore rules if present",
         ),
         (
             "Feb  3 10:30:16 host sshd-session[5678]: Accepted publickey for alice from 10.0.0.1 port 55555 ssh2",
-            "SSH successful login - should match Server ignore rules if present"
+            "SSH successful login - should match Server ignore rules if present",
         ),
         (
             "Feb  3 10:30:17 srv systemd[1]: Started Session 42 of user bob.",
-            "SystemD session - should match ignore rules if present"
+            "SystemD session - should match ignore rules if present",
         ),
         (
             "MyCustomApp[999]: Processing request 12345",
-            "Custom application - should NOT match any rules"
+            "Custom application - should NOT match any rules",
         ),
     ];
 

@@ -31,6 +31,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
+          targets: wasm32-unknown-unknown
       
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
@@ -39,16 +40,16 @@ jobs:
         
       - name: Build documentation
         run: |
-          cargo doc --no-deps --all-features --document-private-items
+          cargo doc --no-deps --all-features --document-private-items --target x86_64-unknown-linux-gnu
           # Create index redirect to main crate
-          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/doc/index.html
+          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/x86_64-unknown-linux-gnu/doc/index.html
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
           
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: target/doc
+          folder: target/x86_64-unknown-linux-gnu/doc
           branch: gh-pages
           clean: true
           clean-exclude: pr-preview/  # Preserve PR previews
@@ -71,6 +72,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
+          targets: wasm32-unknown-unknown
       
       - name: Setup Rust cache
         if: github.event.action != 'closed'
@@ -81,16 +83,16 @@ jobs:
       - name: Build documentation
         if: github.event.action != 'closed'
         run: |
-          cargo doc --no-deps --all-features --document-private-items
+          cargo doc --no-deps --all-features --document-private-items --target x86_64-unknown-linux-gnu
           # Create index redirect to main crate for PR preview
-          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/doc/index.html
+          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/x86_64-unknown-linux-gnu/doc/index.html
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
           
       - name: Deploy PR preview
         uses: rossjrw/pr-preview-action@v1
         with:
-          source-dir: target/doc
+          source-dir: target/x86_64-unknown-linux-gnu/doc
           preview-branch: gh-pages
           umbrella-dir: pr-preview
           action: auto
