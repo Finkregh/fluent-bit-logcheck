@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.4
+# syntax=docker/dockerfile:1.21
 # Multi-stage build for logcheck-fluent-bit-filter with multi-architecture support
 # Use buildplatform for cross-compilation performance
 FROM --platform=$BUILDPLATFORM rust:1.84-slim AS builder
