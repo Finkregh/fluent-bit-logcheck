@@ -46,6 +46,7 @@ RUN . /build/env && \
 
 # Copy manifests first for better caching
 COPY Cargo.toml Cargo.lock ./
+COPY xtask ./xtask
 
 # Create dummy source to cache dependencies
 RUN mkdir -p src && \

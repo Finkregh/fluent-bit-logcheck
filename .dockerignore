@@ -1,0 +1,58 @@
+# Git directory
+.git/
+.gitignore
+.gitattributes
+
+# Build artifacts
+target/
+*.wasm
+*.so
+*.dylib
+*.dll
+*.exe
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Test files
+tests/
+benches/
+
+# Package management
+Cargo.lock.msrv
+rust-toolchain.toml
+
+# Local configuration
+.env
+.env.*
+
+# AUR/Packaging
+pkgbuild/
+aur/
+*.pkg.tar.zst
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Coverage and profiling
+*.profdata
+*.profraw
+tarpaulin-report.html
+cobertura.xml
+lcov.info
