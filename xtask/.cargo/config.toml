@@ -1,0 +1,3 @@
+# Override workspace default to build for host, not WASM
+[build]
+# Don't set target - use host default

@@ -1,7 +1,10 @@
-[build]
-target = "wasm32-unknown-unknown"
+# Note: No default build target set to allow xtask to build for host platform
+# WASM builds should explicitly specify: cargo build --target wasm32-unknown-unknown
 
 [target.wasm32-unknown-unknown]
 rustflags = [
     "-C", "link-arg=-zstack-size=1048576",
 ]
+
+[alias]
+xtask = "run --package xtask --"

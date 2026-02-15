@@ -81,18 +81,8 @@ jobs:
         with:
           tool: cargo-tarpaulin
       
-      - name: Run tarpaulin
-        run: |
-          cargo tarpaulin \
-            --target x86_64-unknown-linux-gnu \
-            --workspace \
-            --timeout 300 \
-            --out xml \
-            --out lcov \
-            --output-dir target/coverage/ \
-            --exclude-files target/* \
-            --exclude-files build.rs \
-            --all-features
+      - name: Run coverage with xtask
+        run: cargo xtask coverage
       
       # Comment out codecov upload as requested
       # - name: Upload to codecov.io
@@ -184,9 +174,9 @@ jobs:
         with:
           key: ${{ matrix.target }}
       
-      - name: Build CLI natively
+      - name: Build CLI natively with xtask
         if: ${{ !matrix.use-cross }}
-        run: cargo build --locked --release --bin logcheck-filter --target ${{ matrix.target }}
+        run: cargo xtask build-cli --release
       
       - name: Build CLI with cross-compilation
         if: ${{ matrix.use-cross }}
@@ -220,8 +210,8 @@ jobs:
         with:
           key: wasm32-unknown-unknown
       
-      - name: Build WASM filter
-        run: cargo build --release --target wasm32-unknown-unknown --lib
+      - name: Build WASM filter with xtask
+        run: cargo xtask build-wasm --release
       
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v6

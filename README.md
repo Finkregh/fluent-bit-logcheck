@@ -62,7 +62,7 @@ docker pull --platform linux/arm64 ghcr.io/your-org/fluent-bit-logcheck:latest
 
 **Build the WASM filter:**
 ```bash
-make build
+cargo xtask build-wasm --release
 # Creates: target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm
 ```
 
@@ -393,7 +393,6 @@ spec:
 * Rust compiler with WASM target: `rustup target add wasm32-unknown-unknown`
 * Cargo for Rust dependencies
 * Docker for testing against Fluent-Bit
-* Make for development shortcuts
 * Optional: [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) for WASM analysis
 
 ### CI/CD Pipeline
@@ -428,25 +427,40 @@ The CI system automatically builds multiple targets:
 - `linux/amd64`, `linux/arm64` (published to GitHub Container Registry)
 
 **Local Development:**
+
+This project uses [cargo-xtask](https://github.com/matklad/cargo-xtask) for build automation:
+
 ```bash
-# Build CLI for your platform
-cargo build --release --bin logcheck-filter
+# Quick start - show all available commands
+cargo xtask --help
 
-# Build WASM filter  
-cargo build --release --target wasm32-unknown-unknown --lib
+# Build everything (CLI + WASM + plugin)
+cargo xtask build-all --release
 
-# Or use make shortcuts (auto-detects your platform)
-make build        # WASM filter
-make build-cli    # CLI for native platform
-make build-plugin # Shared library for native platform
+# Build specific targets
+cargo xtask build-cli --release     # CLI for your platform
+cargo xtask build-wasm --release    # WASM filter
+cargo xtask build-plugin --release  # Shared library
 
 # Build for all platforms (requires cross-compilation setup)
-make build-all-cli    # All CLI targets
-make build-all-plugin # All plugin targets
+cargo xtask build-all-cli --release
+cargo xtask build-all-plugin --release
 
-# View all available targets
-make help
+# Install CLI locally
+cargo xtask install-cli  # Installs to ~/.local/bin
+
+# Generate documentation
+cargo xtask docs         # API docs + CLI reference + man pages
+cargo xtask docs --open  # Open API docs in browser
+
+# Testing
+cargo test                          # Unit tests
+cargo xtask test-integration        # Integration tests
+cargo xtask test-json               # WASM filter test (Docker)
+cargo xtask test-msgpack            # WASM filter test (Docker)
 ```
+
+See [docs/xtask-guide.md](docs/xtask-guide.md) for complete xtask documentation.
 
 **Cross-compilation setup** (for build-all targets):
 ```bash
@@ -479,8 +493,8 @@ cargo test
 echo "Failed password for admin" | ./target/release/logcheck-filter --rules /etc/logcheck stdin
 
 # Test WASM filter with Docker
-make test_json     # Test JSON format
-make test_msgpack  # Test MessagePack format
+cargo xtask test-json     # Test JSON format
+cargo xtask test-msgpack  # Test MessagePack format
 ```
 
 Expected output:
