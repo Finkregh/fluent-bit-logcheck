@@ -53,49 +53,42 @@ RUN mkdir -p src && \
     echo "fn main() {}" > src/main.rs && \
     echo "// dummy lib" > src/lib.rs
 
-# Build dependencies with cache mounts
+# Build dependencies with cache mounts (build native binary only for deps)
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/build/target,id=target-${TARGETARCH} \
     . /build/env && \
     cargo build --release --target $TARGET_ARCH --bin logcheck-filter && \
-    cargo build --release --target wasm32-unknown-unknown --lib && \
     rm -rf src
 
 # Copy actual source code
 COPY src ./src
 
-# Build WASM filter with cache mounts (release mode required due to stack constraints)
+# Build WASM filter with cache mounts and copy artifact out before unmount
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/build/target,id=target-wasm \
-    cargo build --release --target wasm32-unknown-unknown --lib
+    cargo build --release --target wasm32-unknown-unknown --lib && \
+    mkdir -p /build/wasm-output && \
+    cp /build/target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm /build/wasm-output/
 
-# Build native CLI binary with cache mounts and cross-compilation
+# Build native CLI binary with cache mounts and copy artifact out before unmount
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/build/target,id=target-${TARGETARCH} \
     . /build/env && \
-    cargo build --release --bin logcheck-filter --target $TARGET_ARCH
-
-# Intermediate stage to select the correct binary
-FROM builder AS binary-selector
-
-ARG TARGETARCH
-
-# Create output directory and copy the appropriate binary
-RUN . /build/env && \
-    mkdir -p /output && \
-    cp /build/target/$TARGET_ARCH/release/logcheck-filter /output/logcheck-filter
+    cargo build --release --bin logcheck-filter --target $TARGET_ARCH && \
+    mkdir -p /build/native-output && \
+    cp /build/target/$TARGET_ARCH/release/logcheck-filter /build/native-output/
 
 # Final runtime image with Fluent Bit
 FROM fluent/fluent-bit:4.2.2
 
-# Copy WASM filter (architecture-independent)
-COPY --from=builder /build/target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
+# Copy WASM filter (architecture-independent) from output directory
+COPY --from=builder /build/wasm-output/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
 
-# Copy CLI binary for current architecture
-COPY --from=binary-selector /output/logcheck-filter /usr/local/bin/logcheck-filter
+# Copy CLI binary for current architecture from output directory
+COPY --from=builder /build/native-output/logcheck-filter /usr/local/bin/logcheck-filter
 
 # Ensure binary is executable
 RUN chmod +x /usr/local/bin/logcheck-filter
