@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand, ValueEnum};
+use clap_complete::Shell;
 use std::path::PathBuf;
 
 /// Logcheck-based log filtering tool
@@ -30,6 +31,23 @@ pub struct Cli {
     /// Write filtered logs to file (informational logs go to stdout)
     #[arg(long, help = "Write filtered logs to file")]
     pub output_file: Option<PathBuf>,
+
+    /// Generate CLI documentation in Markdown format
+    #[arg(
+        long,
+        hide = true,
+        help = "Generate CLI documentation in Markdown format"
+    )]
+    pub generate_docs: bool,
+
+    /// Generate shell completion scripts
+    #[arg(
+        long,
+        value_enum,
+        hide = true,
+        help = "Generate shell completion scripts"
+    )]
+    pub generate_completion: Option<Shell>,
 
     /// Input source
     #[command(subcommand)]

@@ -3,6 +3,11 @@ name = "logcheck-fluent-bit-filter"
 version = "0.1.0"
 edition = "2021"
 description = "Fluent-Bit WASM filter and CLI tool for logcheck-rule based filtering"
+authors = ["Oluf Lorenzen"]
+repository = "https://github.com/Finkregh/fluent-bit-logcheck/"
+license = "MIT OR Apache-2.0"
+keywords = ["logcheck"]
+categories = ["command-line-utilities", "fluent-bit-plugin", "fluent-bit-filter"]
 
 [lib]
 # Fluentbit WASM filters have to be built as a library that function names
@@ -15,7 +20,7 @@ name = "logcheck-filter"
 path = "src/main.rs"
 
 [dependencies]
-# MessagePack support (for WASM filter) 
+# MessagePack support (for WASM filter)
 rmp = "0.8.12"
 rmpv = "1.0.2"
 
@@ -35,6 +40,11 @@ anyhow = "1.0"
 thiserror = "2"
 colored = "3"
 
+# CLI documentation generation
+clap-markdown = "0.1.4"
+clap_mangen = "0.2.23"
+clap_complete = "4.5"
+
 # Journald integration (pure Rust) - Linux only
 [target.'cfg(target_os = "linux")'.dependencies]
 journald-export-parser-rs = "0.1.0"
@@ -47,3 +57,8 @@ opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[build-dependencies]
+clap = { version = "4.5", features = ["derive", "cargo"] }
+clap-markdown = "0.1.5"
+clap_mangen = "0.2.31"
