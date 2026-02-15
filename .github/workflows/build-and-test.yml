@@ -101,7 +101,7 @@ jobs:
       #     file: target/coverage/cobertura.xml
       
       - name: Archive coverage results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: coverage-report
@@ -199,7 +199,7 @@ jobs:
           use-rust-cache: true
       
       - name: Upload CLI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: logcheck-filter-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/logcheck-filter${{ matrix.binary-suffix }}
@@ -224,7 +224,7 @@ jobs:
         run: cargo build --release --target wasm32-unknown-unknown --lib
       
       - name: Upload WASM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fluentbit-wasm-filter
           path: target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm
@@ -260,7 +260,7 @@ jobs:
           use-rust-cache: true
       
       - name: Upload plugin artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: liblogcheck_fluent_bit_filter-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/liblogcheck_fluent_bit_filter.${{ matrix.lib-extension }}
