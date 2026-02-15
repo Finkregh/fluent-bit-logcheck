@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["apply_logcheck_rules","create_filtered_entry","logcheck_demo_json","logcheck_filter_json","parse_log_entry","to_c_string"],"mod":["cli","rules"],"static":["LOGCHECK_DB"],"struct":["LogEntry"]};
