@@ -26,6 +26,12 @@ jobs:
         run: |
           echo "value=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       
+      - name: Sanitize cache scope
+        id: cache_scope
+        run: |
+          # Replace slashes with hyphens for valid Docker tag format
+          echo "value=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> $GITHUB_OUTPUT
+      
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       
@@ -74,13 +80,13 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           # Advanced multi-source caching strategy
           cache-from: |
-            type=gha,scope=${{ github.ref_name }}
+            type=gha,scope=${{ steps.cache_scope.outputs.value }}
             type=gha,scope=main
-            type=registry,ref=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}:cache-${{ github.ref_name }}
+            type=registry,ref=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}:cache-${{ steps.cache_scope.outputs.value }}
             type=registry,ref=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}:cache-main
           cache-to: |
-            type=gha,scope=${{ github.ref_name }},mode=max
-            type=registry,ref=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}:cache-${{ github.ref_name }},mode=max
+            type=gha,scope=${{ steps.cache_scope.outputs.value }},mode=max
+            type=registry,ref=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}:cache-${{ steps.cache_scope.outputs.value }},mode=max
           # Build performance optimizations
           build-args: |
             BUILDKIT_INLINE_CACHE=1
