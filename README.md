@@ -39,7 +39,6 @@ Download pre-built binaries from [GitHub Releases](../../releases) for multiple 
 - `logcheck-filter-linux-arm64-musl.tar.gz` (Alpine Linux ARM64)
 - `logcheck-filter-darwin-amd64.tar.gz` (macOS Intel)
 - `logcheck-filter-darwin-arm64.tar.gz` (macOS Apple Silicon)
-- `logcheck-filter-windows-amd64.zip` (Windows x64)
 
 **WASM Filter:**
 
@@ -403,7 +402,6 @@ spec:
 - Rust compiler with your target installed:
   - Linux: `rustup target add x86_64-unknown-linux-gnu` or `aarch64-unknown-linux-gnu`
   - macOS: `rustup target add x86_64-apple-darwin` or `aarch64-apple-darwin`
-  - Windows: `rustup target add x86_64-pc-windows-msvc`
   - Alpine Linux: `rustup target add x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl`
 - Cargo for dependency management
 - Logcheck rules directory (e.g., `/etc/logcheck` from `logcheck-database` package)
@@ -414,6 +412,8 @@ spec:
 - Cargo for Rust dependencies
 - Docker for testing against Fluent-Bit
 - Optional: [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) for WASM analysis
+
+**Important:** Fluent-Bit officially supports only `wasm32-unknown-unknown` for Rust WASM filters (requires rustc 1.62.1 or later). Other WASM targets like `wasm32-wasi` are not supported. See [Fluent-Bit WASM filter documentation](https://docs.fluentbit.io/manual/pipeline/filters/wasm) for details.
 
 ### CI/CD Pipeline
 
@@ -437,7 +437,6 @@ The CI system automatically builds multiple targets:
 - `aarch64-apple-darwin` (macOS Apple Silicon)
 - `x86_64-unknown-linux-musl` (Alpine Linux x86_64, release only)
 - `aarch64-unknown-linux-musl` (Alpine Linux ARM64, release only)
-- `x86_64-pc-windows-msvc` (Windows x64, release only)
 
 **WASM Filter:**
 
@@ -533,7 +532,6 @@ See [docs/xtask-guide.md](docs/xtask-guide.md) for complete xtask documentation.
 rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
 rustup target add x86_64-apple-darwin aarch64-apple-darwin  
 rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
-rustup target add x86_64-pc-windows-msvc wasm32-unknown-unknown
 
 # May require additional system dependencies for cross-compilation
 ```

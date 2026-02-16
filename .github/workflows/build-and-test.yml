@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -33,7 +33,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
@@ -69,7 +69,7 @@ jobs:
     needs: [format, clippy]
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
@@ -106,37 +106,28 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Security Audit
         uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   bloat-check:
-    name: Binary Size Analysis - ${{ matrix.name }}
+    name: Binary Size Analysis - CLI Binary
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    strategy:
-      matrix:
-        include:
-          - name: "CLI Binary"
-            args: "--release --bin logcheck-filter --crates --target x86_64-unknown-linux-gnu"
-            toolchain: "stable"
-          - name: "WASM Filter"
-            args: "--release --lib --crates --target wasm32-unknown-unknown"
-            toolchain: "stable"
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@${{ matrix.toolchain }}
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
+          targets: x86_64-unknown-linux-gnu
 
       - name: Run Cargo Bloat
         uses: orf/cargo-bloat-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          bloat_args: "${{ matrix.args }}"
+          bloat_args: "--release --bin logcheck-filter --crates --target x86_64-unknown-linux-gnu"
 
   build-cli:
     name: Build CLI - ${{ matrix.target }}
@@ -155,17 +146,17 @@ jobs:
             binary-suffix: ""
             use-cross: true
           - target: x86_64-apple-darwin
-            os: macos-13 # Intel runners
+            os: macos-15-intel # Intel runners
             binary-suffix: ""
             use-cross: false
           - target: aarch64-apple-darwin
-            os: macos-14 # Apple Silicon runners
+            os: macos-latest # Apple Silicon runners
             binary-suffix: ""
             use-cross: false
 
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -201,7 +192,7 @@ jobs:
     needs: [format, clippy, test, coverage]
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
@@ -232,14 +223,10 @@ jobs:
             lib-extension: "so"
           - target: aarch64-unknown-linux-gnu
             lib-extension: "so"
-          - target: x86_64-apple-darwin
-            lib-extension: "dylib"
-          - target: aarch64-apple-darwin
-            lib-extension: "dylib"
 
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Build shared library with cross-compilation
         uses: houseabsolute/actions-rust-cross@v1
         with:
