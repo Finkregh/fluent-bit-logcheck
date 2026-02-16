@@ -85,10 +85,10 @@ jobs:
       matrix:
         include:
           - target: x86_64-apple-darwin
-            os: macos-13 # Intel runners
+            os: macos-15-intel # Intel runners
             archive-name: logcheck-filter-darwin-amd64.tar.gz
           - target: aarch64-apple-darwin
-            os: macos-14 # Apple Silicon runners
+            os: macos-latest # Apple Silicon runners
             archive-name: logcheck-filter-darwin-arm64.tar.gz
 
     steps:
