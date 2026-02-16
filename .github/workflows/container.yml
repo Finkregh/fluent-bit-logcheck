@@ -30,10 +30,7 @@ jobs:
         id: cache_scope
         run: |
           # Replace slashes with hyphens for valid Docker tag format
-          echo "value=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> $GITHUB_OUTPUT
-      
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+          echo "value=$(echo '${{ github.ref_name }}' | tr '/' '-' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -73,7 +70,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           # Push only on main branch or tags, not on PRs
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -93,13 +90,13 @@ jobs:
           # Disable provenance to avoid multi-arch manifest issues
           provenance: false
       
-      - name: Test multi-arch images
+      - name: Test container image
         if: github.event_name == 'pull_request'
         run: |
           # Extract the image reference for testing
           IMAGE_REF=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
           
-          echo "### Multi-Architecture Build Test :gear:" >> $GITHUB_STEP_SUMMARY
+          echo "### Container Build Test :gear:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Test AMD64 architecture
@@ -110,17 +107,9 @@ jobs:
             echo "❌ AMD64 architecture test failed" >> $GITHUB_STEP_SUMMARY
           fi
           
-          # Test ARM64 architecture
-          echo "Testing ARM64 architecture..." >> $GITHUB_STEP_SUMMARY
-          if docker run --rm --platform linux/arm64 ${IMAGE_REF} logcheck-filter --version 2>/dev/null; then
-            echo "✅ ARM64 architecture test passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ ARM64 architecture test failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Performance:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Cross-compilation enabled for faster builds" >> $GITHUB_STEP_SUMMARY
+          echo "- cargo-chef for optimal dependency caching" >> $GITHUB_STEP_SUMMARY
           echo "- Advanced caching with multi-source fallback" >> $GITHUB_STEP_SUMMARY
           echo "- Separate cache scopes for optimal performance" >> $GITHUB_STEP_SUMMARY
       
@@ -142,12 +131,11 @@ jobs:
           echo "docker pull $(echo '${{ steps.meta.outputs.tags }}' | head -n1)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Multi-Architecture Support:**" >> $GITHUB_STEP_SUMMARY
+          echo "**Architecture:**" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ linux/amd64 (Intel/AMD x86_64)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ linux/arm64 (ARM 64-bit, Apple Silicon, AWS Graviton)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Performance Optimizations:**" >> $GITHUB_STEP_SUMMARY
-          echo "- 🚀 Cross-compilation for 10-40x faster builds vs emulation" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚀 cargo-chef for optimal dependency caching" >> $GITHUB_STEP_SUMMARY
           echo "- 💾 Advanced caching with registry + GHA fallback" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 Optimized layer caching for Rust dependencies" >> $GITHUB_STEP_SUMMARY
       

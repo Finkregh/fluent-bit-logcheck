@@ -1,95 +1,67 @@
 # syntax=docker/dockerfile:1.21
-# Multi-stage build for logcheck-fluent-bit-filter with multi-architecture support
-# Use buildplatform for cross-compilation performance
-FROM --platform=$BUILDPLATFORM rust:1.93-slim AS builder
+# Multi-stage build for logcheck-fluent-bit-filter using cargo-chef for optimal caching
+# Builds for x86_64 (amd64) only
 
-# Build arguments for multi-architecture support
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-ARG TARGETOS
-ARG TARGETARCH
+ARG RUST_VERSION=1.84
+FROM rust:${RUST_VERSION}-slim AS chef
 
-WORKDIR /build
+# Install system dependencies and cargo-chef
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install base dependencies and cross-compilation tools
-RUN apt-get update && \
-    apt-get install -y \
-        pkg-config \
-        libssl-dev \
-        build-essential \
-        gcc-aarch64-linux-gnu \
-        libc6-dev-arm64-cross \
-        && \
-    rm -rf /var/lib/apt/lists/*
+# Install cargo-chef for dependency caching
+RUN cargo install cargo-chef
 
-# Configure target architecture and Rust targets
-RUN case "$TARGETARCH" in \
-        "amd64") \
-            echo "export TARGET_ARCH=x86_64-unknown-linux-gnu" >> /build/env && \
-            echo "export CC=gcc" >> /build/env && \
-            echo "export CXX=g++" >> /build/env \
-            ;; \
-        "arm64") \
-            echo "export TARGET_ARCH=aarch64-unknown-linux-gnu" >> /build/env && \
-            echo "export CC=aarch64-linux-gnu-gcc" >> /build/env && \
-            echo "export CXX=aarch64-linux-gnu-g++" >> /build/env && \
-            echo "export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> /build/env && \
-            echo "export PKG_CONFIG_ALLOW_CROSS=1" >> /build/env \
-            ;; \
-        *) echo "Unsupported architecture: $TARGETARCH" && exit 1 ;; \
-    esac
+WORKDIR /app
 
-# Source environment and install Rust targets
-RUN . /build/env && \
-    rustup target add wasm32-unknown-unknown && \
-    rustup target add $TARGET_ARCH
-
-# Copy manifests first for better caching
+# Prepare recipe - analyzes project structure for caching
+FROM chef AS planner
 COPY Cargo.toml Cargo.lock ./
-COPY xtask ./xtask
+COPY src/ src/
+COPY xtask/ xtask/
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Create dummy source to cache dependencies
-RUN mkdir -p src && \
-    echo "fn main() {}" > src/main.rs && \
-    echo "// dummy lib" > src/lib.rs
+# Setup build targets
+FROM chef AS builder-base
+RUN rustup target add x86_64-unknown-linux-gnu wasm32-unknown-unknown
+COPY --from=planner /app/recipe.json recipe.json
 
-# Build dependencies with cache mounts (build native binary only for deps)
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/build/target,id=target-${TARGETARCH} \
-    . /build/env && \
-    cargo build --release --target $TARGET_ARCH --bin logcheck-filter && \
-    rm -rf src
+# Cook native dependencies (x86_64) - this layer is cached!
+FROM builder-base AS native-deps
+RUN cargo chef cook \
+    --release \
+    --target x86_64-unknown-linux-gnu \
+    --recipe-path recipe.json
 
-# Copy actual source code
-COPY src ./src
+# Cook WASM dependencies - this layer is cached!
+FROM builder-base AS wasm-deps
+RUN cargo chef cook \
+    --release \
+    --target wasm32-unknown-unknown \
+    --recipe-path recipe.json
 
-# Build WASM filter with cache mounts and copy artifact out before unmount
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/build/target,id=target-wasm \
-    cargo build --release --target wasm32-unknown-unknown --lib && \
-    mkdir -p /build/wasm-output && \
-    cp /build/target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm /build/wasm-output/
+# Build native CLI binary
+FROM native-deps AS cli-builder
+COPY . .
+RUN cargo build --release --target x86_64-unknown-linux-gnu --bin logcheck-filter
 
-# Build native CLI binary with cache mounts and copy artifact out before unmount
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/build/target,id=target-${TARGETARCH} \
-    . /build/env && \
-    cargo build --release --bin logcheck-filter --target $TARGET_ARCH && \
-    mkdir -p /build/native-output && \
-    cp /build/target/$TARGET_ARCH/release/logcheck-filter /build/native-output/
+# Build WASM filter
+FROM wasm-deps AS wasm-builder
+COPY . .
+RUN cargo build --release --target wasm32-unknown-unknown --lib
 
 # Final runtime image with Fluent Bit
 FROM fluent/fluent-bit:4.2.2
 
-# Copy WASM filter (architecture-independent) from output directory
-COPY --from=builder /build/wasm-output/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
+# Copy WASM filter (architecture-independent)
+COPY --from=wasm-builder /app/target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
 
-# Copy CLI binary for current architecture from output directory
+# Copy CLI binary (x86_64)
 # Binary is already executable from cargo build, no chmod needed
-COPY --from=builder /build/native-output/logcheck-filter /usr/local/bin/logcheck-filter
+COPY --from=cli-builder /app/target/x86_64-unknown-linux-gnu/release/logcheck-filter /usr/local/bin/logcheck-filter
 
 LABEL org.opencontainers.image.source=https://github.com/finkregh/fluent-bit-logcheck
 LABEL org.opencontainers.image.description="Fluent-bit with logcheck WASM filter and CLI tool"
