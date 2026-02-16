@@ -17,6 +17,39 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Update PKGBUILD source reference
+        run: |
+          # Determine the git reference (branch or tag)
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Extract tag name
+            GIT_REF="${{ github.ref_name }}"
+            REF_TYPE="tag"
+          elif [[ "${{ github.ref }}" == refs/heads/* ]]; then
+            # Extract branch name
+            GIT_REF="${{ github.ref_name }}"
+            REF_TYPE="branch"
+          else
+            # Fallback for PRs - use the head ref
+            GIT_REF="${{ github.head_ref }}"
+            REF_TYPE="branch"
+          fi
+
+          echo "Git reference: $GIT_REF (type: $REF_TYPE)"
+
+          # Only update if not on main branch
+          if [[ "$GIT_REF" != "main" ]]; then
+            echo "Updating PKGBUILD source reference to use $REF_TYPE=$GIT_REF"
+            
+            # Update the source line in PKGBUILD
+            sed -i "s|source=(\"\$pkgname::git+\$url.git\")|source=(\"\$pkgname::git+\$url.git#${REF_TYPE}=${GIT_REF}\")|g" \
+              pkgbuild/logcheck-filter/PKGBUILD
+            
+            echo "Updated PKGBUILD:"
+            grep "^source=" pkgbuild/logcheck-filter/PKGBUILD
+          else
+            echo "On main branch, keeping default source reference"
+          fi
+
       - name: Build logcheck-filter package
         uses: ouuan/pkgbuild-action@master
         id: build-logcheck-filter
@@ -35,6 +68,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      - name: Update PKGBUILD source reference
+        run: |
+          # Determine the git reference (branch or tag)
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Extract tag name
+            GIT_REF="${{ github.ref_name }}"
+            REF_TYPE="tag"
+          elif [[ "${{ github.ref }}" == refs/heads/* ]]; then
+            # Extract branch name
+            GIT_REF="${{ github.ref_name }}"
+            REF_TYPE="branch"
+          else
+            # Fallback for PRs - use the head ref
+            GIT_REF="${{ github.head_ref }}"
+            REF_TYPE="branch"
+          fi
+
+          echo "Git reference: $GIT_REF (type: $REF_TYPE)"
+
+          # Only update if not on main branch
+          if [[ "$GIT_REF" != "main" ]]; then
+            echo "Updating PKGBUILD source reference to use $REF_TYPE=$GIT_REF"
+            
+            # Update the source line in PKGBUILD
+            sed -i "s|source=(\"\$pkgname::git+\$url.git\")|source=(\"\$pkgname::git+\$url.git#${REF_TYPE}=${GIT_REF}\")|g" \
+              pkgbuild/fluent-bit-logcheck-filter/PKGBUILD
+            
+            echo "Updated PKGBUILD:"
+            grep "^source=" pkgbuild/fluent-bit-logcheck-filter/PKGBUILD
+          else
+            echo "On main branch, keeping default source reference"
+          fi
 
       - name: Build fluent-bit-logcheck-filter package
         uses: ouuan/pkgbuild-action@master
@@ -71,11 +137,16 @@ jobs:
   package-summary:
     name: Package Build Summary
     runs-on: ubuntu-latest
-    needs: [build-logcheck-filter-pkg, build-fluent-bit-filter-pkg, build-logcheck-database-pkg]
+    needs:
+      [
+        build-logcheck-filter-pkg,
+        build-fluent-bit-filter-pkg,
+        build-logcheck-database-pkg,
+      ]
     if: always()
     permissions:
       contents: read
-      pull-requests: write  # Required for PR comments
+      pull-requests: write # Required for PR comments
     steps:
       - uses: actions/checkout@v6
 
@@ -87,26 +158,26 @@ jobs:
           echo "" >> package-summary.md
           echo "## Package Status" >> package-summary.md
           echo "" >> package-summary.md
-          
+
           # Check job statuses
           if [[ "${{ needs.build-logcheck-filter-pkg.result }}" == "success" ]]; then
             echo "✅ **logcheck-filter**: Built successfully" >> package-summary.md
           else
             echo "❌ **logcheck-filter**: Build failed" >> package-summary.md
           fi
-          
+
           if [[ "${{ needs.build-fluent-bit-filter-pkg.result }}" == "success" ]]; then
             echo "✅ **fluent-bit-logcheck-filter**: Built successfully" >> package-summary.md
           else
             echo "❌ **fluent-bit-logcheck-filter**: Build failed" >> package-summary.md
           fi
-          
+
           if [[ "${{ needs.build-logcheck-database-pkg.result }}" == "success" ]]; then
             echo "✅ **logcheck-database**: Built successfully" >> package-summary.md
           else
             echo "❌ **logcheck-database**: Build failed" >> package-summary.md
           fi
-          
+
           echo "" >> package-summary.md
           echo "## Installation" >> package-summary.md
           echo "" >> package-summary.md
@@ -131,7 +202,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            
+
             try {
               const summary = fs.readFileSync('package-summary.md', 'utf8');
               
