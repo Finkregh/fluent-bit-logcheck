@@ -34,9 +34,7 @@ Download pre-built binaries from [GitHub Releases](../../releases) for multiple 
 **CLI Tools:**
 
 - `logcheck-filter-linux-amd64.tar.gz` (Linux x86_64, glibc)
-- `logcheck-filter-linux-amd64-musl.tar.gz` (Alpine Linux x86_64)
 - `logcheck-filter-linux-arm64.tar.gz` (Linux ARM64, glibc)
-- `logcheck-filter-linux-arm64-musl.tar.gz` (Alpine Linux ARM64)
 - `logcheck-filter-darwin-amd64.tar.gz` (macOS Intel)
 - `logcheck-filter-darwin-arm64.tar.gz` (macOS Apple Silicon)
 
@@ -402,7 +400,6 @@ spec:
 - Rust compiler with your target installed:
   - Linux: `rustup target add x86_64-unknown-linux-gnu` or `aarch64-unknown-linux-gnu`
   - macOS: `rustup target add x86_64-apple-darwin` or `aarch64-apple-darwin`
-  - Alpine Linux: `rustup target add x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl`
 - Cargo for dependency management
 - Logcheck rules directory (e.g., `/etc/logcheck` from `logcheck-database` package)
 
@@ -435,8 +432,6 @@ The CI system automatically builds multiple targets:
 - `aarch64-unknown-linux-gnu` (Linux ARM64)
 - `x86_64-apple-darwin` (macOS Intel)
 - `aarch64-apple-darwin` (macOS Apple Silicon)
-- `x86_64-unknown-linux-musl` (Alpine Linux x86_64, release only)
-- `aarch64-unknown-linux-musl` (Alpine Linux ARM64, release only)
 
 **WASM Filter:**
 
@@ -531,7 +526,6 @@ See [docs/xtask-guide.md](docs/xtask-guide.md) for complete xtask documentation.
 # Install targets
 rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
 rustup target add x86_64-apple-darwin aarch64-apple-darwin  
-rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
 
 # May require additional system dependencies for cross-compilation
 ```

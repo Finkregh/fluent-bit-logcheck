@@ -39,14 +39,8 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             archive-name: logcheck-filter-linux-amd64.tar.gz
             use-cross: false
-          - target: x86_64-unknown-linux-musl
-            archive-name: logcheck-filter-linux-amd64-musl.tar.gz
-            use-cross: true
           - target: aarch64-unknown-linux-gnu
             archive-name: logcheck-filter-linux-arm64.tar.gz
-            use-cross: true
-          - target: aarch64-unknown-linux-musl
-            archive-name: logcheck-filter-linux-arm64-musl.tar.gz
             use-cross: true
 
     steps:
@@ -161,13 +155,8 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             archive-name: liblogcheck-plugin-linux-amd64.tar.gz
-          - target: x86_64-unknown-linux-musl
-            archive-name: liblogcheck-plugin-linux-amd64-musl.tar.gz
           - target: aarch64-unknown-linux-gnu
             archive-name: liblogcheck-plugin-linux-arm64.tar.gz
-          - target: aarch64-unknown-linux-musl
-            archive-name: liblogcheck-plugin-linux-arm64-musl.tar.gz
-
     steps:
       - uses: actions/checkout@v6
 
