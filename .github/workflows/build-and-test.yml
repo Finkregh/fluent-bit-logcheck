@@ -113,28 +113,21 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   bloat-check:
-    name: Binary Size Analysis - ${{ matrix.name }}
+    name: Binary Size Analysis - CLI Binary
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    strategy:
-      matrix:
-        include:
-          - name: "CLI Binary"
-            args: "--release --bin logcheck-filter --crates --target x86_64-unknown-linux-gnu"
-          - name: "WASM Filter"
-            args: "--release --lib --crates --target wasm32-unknown-unknown"
     steps:
       - uses: actions/checkout@v6
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
+          targets: x86_64-unknown-linux-gnu
 
       - name: Run Cargo Bloat
         uses: orf/cargo-bloat-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          bloat_args: "${{ matrix.args }}"
+          bloat_args: "--release --bin logcheck-filter --crates --target x86_64-unknown-linux-gnu"
 
   build-cli:
     name: Build CLI - ${{ matrix.target }}

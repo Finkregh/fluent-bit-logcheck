@@ -413,6 +413,8 @@ spec:
 - Docker for testing against Fluent-Bit
 - Optional: [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) for WASM analysis
 
+**Important:** Fluent-Bit officially supports only `wasm32-unknown-unknown` for Rust WASM filters (requires rustc 1.62.1 or later). Other WASM targets like `wasm32-wasi` are not supported. See [Fluent-Bit WASM filter documentation](https://docs.fluentbit.io/manual/pipeline/filters/wasm) for details.
+
 ### CI/CD Pipeline
 
 The project includes comprehensive GitHub Actions workflows:
