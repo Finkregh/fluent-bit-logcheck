@@ -2,11 +2,11 @@ name: Container Build and Publish
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -20,18 +20,18 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Set image name to lowercase
         id: image_name
         run: |
           echo "value=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      
+
       - name: Sanitize cache scope
         id: cache_scope
         run: |
           # Replace slashes with hyphens for valid Docker tag format
           echo "value=$(echo '${{ github.ref_name }}' | tr '/' '-' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -40,7 +40,7 @@ jobs:
             image=moby/buildkit:buildx-stable-1
           # Use local cache for better performance
           buildkitd-flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
-      
+
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -48,7 +48,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -65,7 +65,7 @@ jobs:
             type=semver,pattern={{major}}
             # Tag with git sha for PRs
             type=sha,enable=${{ github.event_name == 'pull_request' }}
-      
+
       - name: Build and push container image
         uses: docker/build-push-action@v6
         with:
@@ -75,30 +75,30 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Advanced multi-source caching strategy
+          # Cache strategy: GHA cache for PRs, GHA + registry for authenticated builds
           cache-from: |
             type=gha,scope=${{ steps.cache_scope.outputs.value }}
             type=gha,scope=main
-            type=registry,ref=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}:cache-${{ steps.cache_scope.outputs.value }}
-            type=registry,ref=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}:cache-main
+            ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/{1}:cache-{2}', env.REGISTRY, steps.image_name.outputs.value, steps.cache_scope.outputs.value) || '' }}
+            ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/{1}:cache-main', env.REGISTRY, steps.image_name.outputs.value) || '' }}
           cache-to: |
             type=gha,scope=${{ steps.cache_scope.outputs.value }},mode=max
-            type=registry,ref=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}:cache-${{ steps.cache_scope.outputs.value }},mode=max
+            ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/{1}:cache-{2},mode=max', env.REGISTRY, steps.image_name.outputs.value, steps.cache_scope.outputs.value) || '' }}
           # Build performance optimizations
           build-args: |
             BUILDKIT_INLINE_CACHE=1
           # Disable provenance to avoid multi-arch manifest issues
           provenance: false
-      
+
       - name: Test container image
         if: github.event_name == 'pull_request'
         run: |
           # Extract the image reference for testing
           IMAGE_REF=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
-          
+
           echo "### Container Build Test :gear:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Test AMD64 architecture
           echo "Testing AMD64 architecture..." >> $GITHUB_STEP_SUMMARY
           if docker run --rm --platform linux/amd64 ${IMAGE_REF} logcheck-filter --version 2>/dev/null; then
@@ -106,13 +106,13 @@ jobs:
           else
             echo "❌ AMD64 architecture test failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Performance:**" >> $GITHUB_STEP_SUMMARY
           echo "- cargo-chef for optimal dependency caching" >> $GITHUB_STEP_SUMMARY
           echo "- Advanced caching with multi-source fallback" >> $GITHUB_STEP_SUMMARY
           echo "- Separate cache scopes for optimal performance" >> $GITHUB_STEP_SUMMARY
-      
+
       - name: Summary
         if: github.event_name != 'pull_request'
         run: |
@@ -138,7 +138,7 @@ jobs:
           echo "- 🚀 cargo-chef for optimal dependency caching" >> $GITHUB_STEP_SUMMARY
           echo "- 💾 Advanced caching with registry + GHA fallback" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 Optimized layer caching for Rust dependencies" >> $GITHUB_STEP_SUMMARY
-      
+
       - name: Summary (PR)
         if: github.event_name == 'pull_request'
         run: |
