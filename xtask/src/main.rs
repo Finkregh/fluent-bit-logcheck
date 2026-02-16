@@ -15,7 +15,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Build all targets (CLI, WASM filter, and shared library) for native platform
+    /// Build all targets (CLI and WASM filter) for native platform
     BuildAll {
         /// Build in release mode
         #[arg(long)]
@@ -35,18 +35,6 @@ enum Commands {
     },
     /// Build WASM filter
     BuildWasm {
-        /// Build in release mode
-        #[arg(long)]
-        release: bool,
-    },
-    /// Build shared library plugin for native platform
-    BuildPlugin {
-        /// Build in release mode
-        #[arg(long)]
-        release: bool,
-    },
-    /// Build plugin for all supported platforms (requires cross-compilation setup)
-    BuildAllPlugin {
         /// Build in release mode
         #[arg(long)]
         release: bool,
@@ -99,8 +87,6 @@ fn main() -> Result<()> {
         Commands::BuildCli { release } => tasks::build::build_cli(release),
         Commands::BuildAllCli { release } => tasks::build::build_all_cli(release),
         Commands::BuildWasm { release } => tasks::build::build_wasm(release),
-        Commands::BuildPlugin { release } => tasks::build::build_plugin(release),
-        Commands::BuildAllPlugin { release } => tasks::build::build_all_plugin(release),
         Commands::InstallCli => tasks::build::install_cli(),
         Commands::TestIntegration { release } => tasks::test::integration_tests(release),
         Commands::TestJson => tasks::test::test_json(),

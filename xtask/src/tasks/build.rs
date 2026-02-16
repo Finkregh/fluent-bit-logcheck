@@ -46,9 +46,6 @@ pub fn build_all(release: bool) -> Result<()> {
     // Build WASM filter
     build_wasm(release)?;
 
-    // Build plugin for native target
-    build_plugin(release)?;
-
     println!("✅ All targets built successfully");
     Ok(())
 }
@@ -152,75 +149,6 @@ pub fn build_wasm(release: bool) -> Result<()> {
     }
 
     println!("✅ WASM filter built successfully");
-    Ok(())
-}
-
-/// Build shared library plugin for native target
-pub fn build_plugin(release: bool) -> Result<()> {
-    let target = detect_native_target();
-    println!(
-        "🔨 Building shared library plugin for {}{}...",
-        target,
-        if release { " (release)" } else { "" }
-    );
-
-    let mut cmd = Command::new("cargo");
-    cmd.arg("build").arg("--lib").arg("--target").arg(&target);
-
-    if release {
-        cmd.arg("--release");
-    }
-
-    let status = cmd.status()?;
-    if !status.success() {
-        anyhow::bail!("Failed to build plugin for {}", target);
-    }
-
-    println!("✅ Plugin built successfully for {}", target);
-    Ok(())
-}
-
-/// Build plugin for all supported platforms (requires cross-compilation setup)
-pub fn build_all_plugin(release: bool) -> Result<()> {
-    println!("🔨 Building plugin for all platforms...");
-
-    let mut failed_targets = Vec::new();
-    let mut all_targets = Vec::new();
-    all_targets.extend_from_slice(CLI_TARGETS);
-    all_targets.extend_from_slice(MUSL_TARGETS);
-
-    for target in all_targets {
-        println!("  Building plugin for {}...", target);
-
-        let mut cmd = Command::new("cargo");
-        cmd.arg("build").arg("--lib").arg("--target").arg(target);
-
-        if release {
-            cmd.arg("--release");
-        }
-
-        match cmd.status() {
-            Ok(status) if status.success() => {
-                println!("    ✅ {}", target);
-            }
-            _ => {
-                println!("    ❌ Failed: {}", target);
-                failed_targets.push(target);
-            }
-        }
-    }
-
-    if !failed_targets.is_empty() {
-        println!("\n⚠️  Some targets failed to build:");
-        for target in &failed_targets {
-            println!("  - {}", target);
-        }
-        println!("\nNote: Cross-compilation may require additional toolchains.");
-        println!("Install with: rustup target add <target>");
-    } else {
-        println!("\n✅ All plugin targets built successfully");
-    }
-
     Ok(())
 }
 

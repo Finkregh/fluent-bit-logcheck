@@ -3,14 +3,14 @@ name: Documentation
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'Cargo.toml', 'README.md']
+    paths: ["src/**", "Cargo.toml", "README.md", "build.rs"]
   pull_request:
     types: [opened, reopened, synchronize, closed]
-    paths: ['src/**', 'Cargo.toml', 'README.md']
+    paths: ["src/**", "Cargo.toml", "README.md", "build.rs"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false  # Don't cancel main deployments
+  cancel-in-progress: false # Don't cancel main deployments
 
 permissions:
   contents: write
@@ -26,36 +26,190 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-      
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
-      
+
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
         with:
           key: docs
-        
+
       - name: Build documentation with xtask
         run: |
           # Generate all docs (API + CLI reference + man pages)
           cargo xtask docs
-          # The API docs are in target/doc, CLI docs in docs/
-          # Create index redirect to main crate
-          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/doc/index.html
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
-          
+
+      - name: Generate CLI documentation
+        run: |
+          # Full build to trigger build.rs CLI doc generation
+          # This ensures docs/cli-reference.html is up-to-date
+          cargo build --release --bin logcheck-filter
+
+      - name: Integrate documentation
+        run: |
+          # Copy CLI docs to API doc structure for unified deployment
+          mkdir -p target/doc/cli
+          cp -r docs/* target/doc/cli/
+
+          # Create enhanced landing page with navigation to all docs
+          cat > target/doc/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>logcheck-filter Documentation</title>
+              <style>
+                  * {
+                      margin: 0;
+                      padding: 0;
+                      box-sizing: border-box;
+                  }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                      line-height: 1.6;
+                      color: #333;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 20px;
+                  }
+                  .container {
+                      background: white;
+                      border-radius: 12px;
+                      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                      max-width: 800px;
+                      width: 100%;
+                      padding: 48px;
+                  }
+                  h1 {
+                      font-size: 2.5rem;
+                      margin-bottom: 16px;
+                      color: #2d3748;
+                      font-weight: 700;
+                  }
+                  .subtitle {
+                      font-size: 1.125rem;
+                      color: #718096;
+                      margin-bottom: 40px;
+                  }
+                  nav ul {
+                      list-style: none;
+                  }
+                  nav li {
+                      margin-bottom: 16px;
+                  }
+                  nav a {
+                      display: flex;
+                      align-items: center;
+                      padding: 20px 24px;
+                      background: #f7fafc;
+                      border: 2px solid #e2e8f0;
+                      border-radius: 8px;
+                      text-decoration: none;
+                      color: #2d3748;
+                      font-size: 1.125rem;
+                      font-weight: 500;
+                      transition: all 0.2s ease;
+                  }
+                  nav a:hover {
+                      background: #edf2f7;
+                      border-color: #667eea;
+                      transform: translateY(-2px);
+                      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+                  }
+                  nav a .emoji {
+                      font-size: 1.5rem;
+                      margin-right: 16px;
+                  }
+                  nav a .text {
+                      flex: 1;
+                  }
+                  nav a .description {
+                      display: block;
+                      font-size: 0.875rem;
+                      color: #718096;
+                      font-weight: 400;
+                      margin-top: 4px;
+                  }
+                  .footer {
+                      margin-top: 40px;
+                      padding-top: 24px;
+                      border-top: 1px solid #e2e8f0;
+                      text-align: center;
+                      color: #718096;
+                      font-size: 0.875rem;
+                  }
+                  .footer a {
+                      color: #667eea;
+                      text-decoration: none;
+                  }
+                  .footer a:hover {
+                      text-decoration: underline;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>logcheck-filter Documentation</h1>
+                  <p class="subtitle">Fluent-Bit WASM filter and CLI tool for filtering logs using logcheck rules</p>
+                  
+                  <nav>
+                      <ul>
+                          <li>
+                              <a href="logcheck_fluent_bit_filter/index.html">
+                                  <span class="emoji">📚</span>
+                                  <span class="text">
+                                      API Documentation
+                                      <span class="description">Rust API reference for the WASM filter library</span>
+                                  </span>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="cli/cli-reference.html">
+                                  <span class="emoji">⚙️</span>
+                                  <span class="text">
+                                      CLI Reference
+                                      <span class="description">Command-line interface usage and examples</span>
+                                  </span>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="cli/man/">
+                                  <span class="emoji">📖</span>
+                                  <span class="text">
+                                      Man Pages
+                                      <span class="description">Traditional Unix manual pages</span>
+                                  </span>
+                              </a>
+                          </li>
+                      </ul>
+                  </nav>
+                  
+                  <div class="footer">
+                      <p>Built with ❤️ using Rust | <a href="https://github.com/finkregh/fluent-bit-logcheck" target="_blank">View on GitHub</a></p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: target/doc
           branch: gh-pages
           clean: true
-          clean-exclude: pr-preview/  # Preserve PR previews
-          force: false  # Use rebase, not force push
+          clean-exclude: pr-preview/ # Preserve PR previews
+          force: false # Use rebase, not force push
           single-commit: false
           git-config-name: github-actions[bot]
           git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
@@ -68,30 +222,187 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-      
+
       - name: Install Rust toolchain
         if: github.event.action != 'closed'
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
-      
+
       - name: Setup Rust cache
         if: github.event.action != 'closed'
         uses: Swatinem/rust-cache@v2
         with:
           key: docs
-        
+
       - name: Build documentation with xtask
         if: github.event.action != 'closed'
         run: |
           # Generate all docs (API + CLI reference + man pages)
           cargo xtask docs
-          # Create index redirect to main crate for PR preview
-          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/doc/index.html
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
-          
+
+      - name: Generate CLI documentation
+        if: github.event.action != 'closed'
+        run: |
+          # Full build to trigger build.rs CLI doc generation
+          # This ensures docs/cli-reference.html is up-to-date
+          cargo build --release --bin logcheck-filter
+
+      - name: Integrate documentation
+        if: github.event.action != 'closed'
+        run: |
+          # Copy CLI docs to API doc structure for unified deployment
+          mkdir -p target/doc/cli
+          cp -r docs/* target/doc/cli/
+
+          # Create enhanced landing page with navigation to all docs
+          cat > target/doc/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>logcheck-filter Documentation</title>
+              <style>
+                  * {
+                      margin: 0;
+                      padding: 0;
+                      box-sizing: border-box;
+                  }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                      line-height: 1.6;
+                      color: #333;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 20px;
+                  }
+                  .container {
+                      background: white;
+                      border-radius: 12px;
+                      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                      max-width: 800px;
+                      width: 100%;
+                      padding: 48px;
+                  }
+                  h1 {
+                      font-size: 2.5rem;
+                      margin-bottom: 16px;
+                      color: #2d3748;
+                      font-weight: 700;
+                  }
+                  .subtitle {
+                      font-size: 1.125rem;
+                      color: #718096;
+                      margin-bottom: 40px;
+                  }
+                  nav ul {
+                      list-style: none;
+                  }
+                  nav li {
+                      margin-bottom: 16px;
+                  }
+                  nav a {
+                      display: flex;
+                      align-items: center;
+                      padding: 20px 24px;
+                      background: #f7fafc;
+                      border: 2px solid #e2e8f0;
+                      border-radius: 8px;
+                      text-decoration: none;
+                      color: #2d3748;
+                      font-size: 1.125rem;
+                      font-weight: 500;
+                      transition: all 0.2s ease;
+                  }
+                  nav a:hover {
+                      background: #edf2f7;
+                      border-color: #667eea;
+                      transform: translateY(-2px);
+                      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+                  }
+                  nav a .emoji {
+                      font-size: 1.5rem;
+                      margin-right: 16px;
+                  }
+                  nav a .text {
+                      flex: 1;
+                  }
+                  nav a .description {
+                      display: block;
+                      font-size: 0.875rem;
+                      color: #718096;
+                      font-weight: 400;
+                      margin-top: 4px;
+                  }
+                  .footer {
+                      margin-top: 40px;
+                      padding-top: 24px;
+                      border-top: 1px solid #e2e8f0;
+                      text-align: center;
+                      color: #718096;
+                      font-size: 0.875rem;
+                  }
+                  .footer a {
+                      color: #667eea;
+                      text-decoration: none;
+                  }
+                  .footer a:hover {
+                      text-decoration: underline;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>logcheck-filter Documentation</h1>
+                  <p class="subtitle">Fluent-Bit WASM filter and CLI tool for filtering logs using logcheck rules</p>
+                  
+                  <nav>
+                      <ul>
+                          <li>
+                              <a href="logcheck_fluent_bit_filter/index.html">
+                                  <span class="emoji">📚</span>
+                                  <span class="text">
+                                      API Documentation
+                                      <span class="description">Rust API reference for the WASM filter library</span>
+                                  </span>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="cli/cli-reference.html">
+                                  <span class="emoji">⚙️</span>
+                                  <span class="text">
+                                      CLI Reference
+                                      <span class="description">Command-line interface usage and examples</span>
+                                  </span>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="cli/man/">
+                                  <span class="emoji">📖</span>
+                                  <span class="text">
+                                      Man Pages
+                                      <span class="description">Traditional Unix manual pages</span>
+                                  </span>
+                              </a>
+                          </li>
+                      </ul>
+                  </nav>
+                  
+                  <div class="footer">
+                      <p>Built with ❤️ using Rust | <a href="https://github.com/finkregh/fluent-bit-logcheck" target="_blank">View on GitHub</a></p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+
       - name: Deploy PR preview
         uses: rossjrw/pr-preview-action@v1
         with:

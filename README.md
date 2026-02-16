@@ -42,15 +42,11 @@ Download pre-built binaries from [GitHub Releases](../../releases) for multiple 
 
 - `fluentbit-wasm-filter.tar.gz` (WebAssembly module)
 
-**Shared Libraries:**
-
-- `liblogcheck-plugin-*.tar.gz` (Native plugin libraries for various platforms)
-
 ### Container Images
 
 ```bash
 # Pull the latest image (linux/amd64)
-docker pull ghcr.io/your-org/fluent-bit-logcheck:latest
+docker pull ghcr.io/finkregh/fluent-bit-logcheck:latest
 ```
 
 ## 🚀 Quick Start
@@ -334,7 +330,7 @@ Output:
 version: '3.8'
 services:
   fluent-bit:
-    image: ghcr.io/your-org/fluent-bit-logcheck:latest
+    image: ghcr.io/finkregh/fluent-bit-logcheck:latest
     volumes:
       - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
       - /etc/logcheck:/etc/logcheck:ro
@@ -437,10 +433,6 @@ The CI system automatically builds multiple targets:
 
 - `wasm32-unknown-unknown` (WebAssembly)
 
-**Shared Library Plugin:**
-
-- Same targets as CLI for Linux/macOS (generates `.so`/`.dylib`)
-
 **Container Images:**
 
 - `linux/amd64` (published to GitHub Container Registry)
@@ -492,17 +484,15 @@ This project uses [cargo-xtask](https://github.com/matklad/cargo-xtask) for buil
 # Quick start - show all available commands
 cargo xtask --help
 
-# Build everything (CLI + WASM + plugin)
+# Build everything (CLI + WASM)
 cargo xtask build-all --release
 
 # Build specific targets
 cargo xtask build-cli --release     # CLI for your platform
 cargo xtask build-wasm --release    # WASM filter
-cargo xtask build-plugin --release  # Shared library
 
 # Build for all platforms (requires cross-compilation setup)
 cargo xtask build-all-cli --release
-cargo xtask build-all-plugin --release
 
 # Install CLI locally
 cargo xtask install-cli  # Installs to ~/.local/bin
@@ -604,15 +594,6 @@ src/
 ├── production_test.rs  # Production logcheck rules tests
 └── external_test.rs    # Integration tests
 ```
-
-## 📚 Documentation
-
-See the `plans/` directory for detailed implementation documentation:
-
-- **[README.md](plans/README.md)** - Overview of all planning documents
-- **[CLI-IMPLEMENTATION-GUIDE.md](plans/CLI-IMPLEMENTATION-GUIDE.md)** - Comprehensive implementation guide
-- **[PURE-RUST-JOURNALD.md](plans/PURE-RUST-JOURNALD.md)** - Pure Rust journald integration research
-- **[cli-tool-plan.md](plans/cli-tool-plan.md)** - Implementation plan with progress tracking
 
 ## 🔗 Related Resources
 

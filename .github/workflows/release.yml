@@ -144,38 +144,3 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: fluentbit-wasm-filter.tar.gz
-
-  build-plugin-linux:
-    name: Build Plugin - ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    needs: create-release
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            archive-name: liblogcheck-plugin-linux-amd64.tar.gz
-          - target: aarch64-unknown-linux-gnu
-            archive-name: liblogcheck-plugin-linux-arm64.tar.gz
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Build shared library with cross-compilation
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          target: ${{ matrix.target }}
-          command: build
-          args: "--locked --release --lib"
-          strip: true
-          use-rust-cache: true
-
-      - name: Create archive
-        run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ${{ matrix.archive-name }} liblogcheck_fluent_bit_filter.so
-          mv ${{ matrix.archive-name }} ${{ github.workspace }}/
-
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ matrix.archive-name }}

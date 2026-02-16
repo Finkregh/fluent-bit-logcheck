@@ -16,10 +16,14 @@ version = "0.1.0"
 edition = "2021"
 description = "Fluent-Bit WASM filter and CLI tool for logcheck-rule based filtering"
 authors = ["Oluf Lorenzen"]
-repository = "https://github.com/Finkregh/fluent-bit-logcheck/"
+repository = "https://github.com/finkregh/fluent-bit-logcheck/"
 license = "MIT OR Apache-2.0"
 keywords = ["logcheck"]
-categories = ["command-line-utilities", "fluent-bit-plugin", "fluent-bit-filter"]
+categories = [
+    "command-line-utilities",
+    "fluent-bit-plugin",
+    "fluent-bit-filter",
+]
 
 [lib]
 # Fluentbit WASM filters have to be built as a library that function names
