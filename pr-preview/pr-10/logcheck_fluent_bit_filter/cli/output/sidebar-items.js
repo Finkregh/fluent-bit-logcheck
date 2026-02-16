@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["create_output"],"mod":["json","text"],"struct":["FilteredEntry"],"trait":["LogOutput"]};
