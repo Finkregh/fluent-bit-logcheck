@@ -153,11 +153,11 @@ jobs:
             binary-suffix: ""
             use-cross: true
           - target: x86_64-apple-darwin
-            os: macos-13 # Intel runners
+            os: macos-15-intel # Intel runners
             binary-suffix: ""
             use-cross: false
           - target: aarch64-apple-darwin
-            os: macos-14 # Apple Silicon runners
+            os: macos-latest # Apple Silicon runners
             binary-suffix: ""
             use-cross: false
 
