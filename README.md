@@ -2,13 +2,13 @@
 
 **_This is a work in progress, might eat your cat!_**
 
-This project provides both a **Fluent-Bit WASM filter** and a **standalone CLI tool** for filtering logs using [logcheck](https://packages.debian.org/sid/logcheck) rules.
+This project provides both a **Fluent-Bit WASM filter** and a **standalone CLI tool** for filtering logs using [logcheck](https://packages.debian.org/logcheck) rules.
 
 ## 🎯 Overview
 
 ### Fluent-Bit WASM Filter
 
-Fluentbit ([website](https://github.com/fluent/fluent-bit), [github](https://github.com/fluent/fluent-bit)) is a popular open-source log-shipping tool that can take logs in from many different sources, filter and process them, then send them on to many different supported outputs.
+Fluentbit ([source code](https://github.com/fluent/fluent-bit)) is a popular open-source log-shipping tool that can take logs in from many different sources, filter and process them, then send them on to many different supported outputs.
 
 One of its filtering 'plugins' is the [WASM filter](https://docs.fluentbit.io/manual/pipeline/filters/wasm), which currently embeds the 'WebAssembly Micro Runtime' ([website](https://bytecodealliance.github.io/wamr.dev/), [github](https://github.com/bytecodealliance/wasm-micro-runtime)) (see [here](https://github.com/fluent/fluent-bit/tree/v3.1.3/lib/wasm-micro-runtime-WAMR-1.3.0), [here](https://github.com/fluent/fluent-bit/blob/master/include/fluent-bit/wasm/flb_wasm.h)/[here](https://github.com/fluent/fluent-bit/blob/master/src/wasm/flb_wasm.c), and [here](https://github.com/fluent/fluent-bit/tree/master/plugins/filter_wasm) in fluentbit source) to facilitate executing [WebAssembly (WASM)](https://webassembly.org/) programs/code to process or transform particular flows of log messages that pass through Fluentbit.
 
@@ -17,6 +17,7 @@ One of its filtering 'plugins' is the [WASM filter](https://docs.fluentbit.io/ma
 The `logcheck-filter` CLI tool provides a standalone way to filter log files using logcheck rules from the [logcheck-database](https://packages.debian.org/sid/logcheck-database) package. It can read from files, stdin, or systemd journal, and output filtered results in text or JSON format.
 
 **Key Features:**
+
 - ✅ **Pure Rust** - No C dependencies, runs on Alpine Linux
 - ✅ **Multiple input sources** - Files, stdin, systemd journald
 - ✅ **Flexible output** - Text (colored) or JSON format
@@ -31,6 +32,7 @@ The `logcheck-filter` CLI tool provides a standalone way to filter log files usi
 Download pre-built binaries from [GitHub Releases](../../releases) for multiple platforms:
 
 **CLI Tools:**
+
 - `logcheck-filter-linux-amd64.tar.gz` (Linux x86_64, glibc)
 - `logcheck-filter-linux-amd64-musl.tar.gz` (Alpine Linux x86_64)
 - `logcheck-filter-linux-arm64.tar.gz` (Linux ARM64, glibc)
@@ -40,20 +42,18 @@ Download pre-built binaries from [GitHub Releases](../../releases) for multiple 
 - `logcheck-filter-windows-amd64.zip` (Windows x64)
 
 **WASM Filter:**
+
 - `fluentbit-wasm-filter.tar.gz` (WebAssembly module)
 
 **Shared Libraries:**
+
 - `liblogcheck-plugin-*.tar.gz` (Native plugin libraries for various platforms)
 
 ### Container Images
 
 ```bash
-# Pull the latest multi-arch image
+# Pull the latest image (linux/amd64)
 docker pull ghcr.io/your-org/fluent-bit-logcheck:latest
-
-# Platform-specific pulls
-docker pull --platform linux/amd64 ghcr.io/your-org/fluent-bit-logcheck:latest
-docker pull --platform linux/arm64 ghcr.io/your-org/fluent-bit-logcheck:latest
 ```
 
 ## 🚀 Quick Start
@@ -61,12 +61,14 @@ docker pull --platform linux/arm64 ghcr.io/your-org/fluent-bit-logcheck:latest
 ### Fluent-Bit WASM Filter
 
 **Build the WASM filter:**
+
 ```bash
-make build
+cargo xtask build-wasm --release
 # Creates: target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm
 ```
 
 **Basic Configuration (`fluent-bit.conf`):**
+
 ```ini
 [INPUT]
     name        systemd
@@ -87,6 +89,7 @@ make build
 ```
 
 **Run Fluent-Bit:**
+
 ```bash
 fluent-bit -c fluent-bit.conf
 ```
@@ -119,6 +122,7 @@ logcheck-filter --rules /etc/logcheck --color file /var/log/syslog
 ### Advanced CLI Examples
 
 **Multi-source monitoring:**
+
 ```bash
 # Monitor live systemd journal for security events
 logcheck-filter --rules /etc/logcheck --show violations --color journald --follow --unit sshd
@@ -134,6 +138,7 @@ tail -f /var/log/syslog | logcheck-filter --rules /etc/logcheck --color --show v
 ```
 
 **Integration with other tools:**
+
 ```bash
 # Export violations to CSV for analysis
 logcheck-filter --rules /etc/logcheck --format json --show violations file /var/log/auth.log | \
@@ -152,13 +157,16 @@ logcheck-filter --rules /etc/logcheck --stats journald --follow --lines 0 | \
 ## ⚡ Performance & Monitoring
 
 ### WASM Filter Performance
+
 - **Throughput**: ~10,000 log entries/second on modern hardware
 - **Memory Usage**: ~50MB baseline + 1MB per 1000 logcheck rules
 - **Startup Time**: 2-3 seconds to compile 1247 production logcheck rules
 - **CPU Impact**: Adds ~15% CPU overhead compared to native fluent-bit filters
 
 ### Monitoring Metrics
+
 Monitor these fluent-bit metrics for WASM filter health:
+
 ```bash
 # Check filter processing rate
 curl -s http://localhost:2020/api/v1/metrics | grep -E "fluentbit_filter_(add|drop)_records_total"
@@ -172,24 +180,28 @@ curl -s http://localhost:2020/api/v1/metrics | grep "fluentbit_wasm"
 **Common Issues:**
 
 1. **WASM Module Loading Fails**
+
    ```
    Error: failed to load WASM module
    Solution: Check file path and ensure accessible_paths includes the directory
    ```
 
 2. **Rules Directory Not Found**
+
    ```
    Error: Could not find logcheck rules
    Solution: Ensure /etc/logcheck exists or mount rules directory in container
    ```
 
 3. **Memory Exhaustion**
+
    ```
    Error: WASM execution failed
    Solution: Increase fluent-bit memory limits or reduce rule set size
    ```
 
 **Debug Mode:**
+
 ```ini
 [FILTER]
     name        wasm
@@ -211,11 +223,13 @@ curl -s http://localhost:2020/api/v1/metrics | grep "fluentbit_wasm"
 ### Examples
 
 **Filter violations from SSH logs:**
+
 ```bash
 logcheck-filter --rules /etc/logcheck --show violations file /var/log/auth.log
 ```
 
 Output:
+
 ```
 Loading logcheck rules from: /etc/logcheck
 Loaded 1247 rules across 8 categories
@@ -225,11 +239,13 @@ Reading from: /var/log/auth.log
 ```
 
 **JSON output for programmatic processing:**
+
 ```bash
 logcheck-filter --rules /etc/logcheck --format json file /var/log/syslog
 ```
 
 Output:
+
 ```json
 {"message":"Jan 01 10:00:00 host sshd[1234]: Failed password for admin","matched":true,"category":"Violations","rule_type":"violations"}
 {"message":"Jan 01 10:01:00 host systemd[1]: Started Session 42","matched":true,"category":"SystemEvents","rule_type":"ignore"}
@@ -241,6 +257,7 @@ Output:
 ### Multiple Input Sources
 
 **System Logs Pipeline:**
+
 ```ini
 [INPUT]
     name        systemd
@@ -279,6 +296,7 @@ Output:
 ### Security-Focused Configuration
 
 **Route by logcheck classifications:**
+
 ```ini
 [INPUT]
     name        systemd
@@ -314,6 +332,7 @@ Output:
 ### Container Deployment
 
 **Docker Compose Example:**
+
 ```yaml
 version: '3.8'
 services:
@@ -330,9 +349,10 @@ services:
       - SYS_PTRACE  # For systemd journal access
 ```
 
-The project publishes multi-architecture container images to GitHub Container Registry with support for `linux/amd64` and `linux/arm64` platforms.
+The project publishes container images to GitHub Container Registry for `linux/amd64` platform.
 
 **Kubernetes Deployment:**
+
 ```yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -380,27 +400,27 @@ spec:
 
 ### For CLI Tool
 
-* Rust compiler with your target installed:
+- Rust compiler with your target installed:
   - Linux: `rustup target add x86_64-unknown-linux-gnu` or `aarch64-unknown-linux-gnu`
   - macOS: `rustup target add x86_64-apple-darwin` or `aarch64-apple-darwin`
   - Windows: `rustup target add x86_64-pc-windows-msvc`
   - Alpine Linux: `rustup target add x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl`
-* Cargo for dependency management
-* Logcheck rules directory (e.g., `/etc/logcheck` from `logcheck-database` package)
+- Cargo for dependency management
+- Logcheck rules directory (e.g., `/etc/logcheck` from `logcheck-database` package)
 
 ### For WASM Filter
 
-* Rust compiler with WASM target: `rustup target add wasm32-unknown-unknown`
-* Cargo for Rust dependencies
-* Docker for testing against Fluent-Bit
-* Make for development shortcuts
-* Optional: [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) for WASM analysis
+- Rust compiler with WASM target: `rustup target add wasm32-unknown-unknown`
+- Cargo for Rust dependencies
+- Docker for testing against Fluent-Bit
+- Optional: [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) for WASM analysis
 
 ### CI/CD Pipeline
 
 The project includes comprehensive GitHub Actions workflows:
+
 - **build-and-test.yml**: Main build pipeline with testing across multiple architectures
-- **container.yml**: Docker image builds for `linux/amd64` and `linux/arm64`
+- **container.yml**: Docker image builds for `linux/amd64`
 - **release.yml**: Automated releases with multi-platform binaries
 - **docs.yml**: API documentation generation and GitHub Pages deployment
 - **test-logcheck-rules.yml**: Integration tests with production logcheck rules
@@ -410,8 +430,9 @@ The project includes comprehensive GitHub Actions workflows:
 The CI system automatically builds multiple targets:
 
 **CLI Binary Targets:**
+
 - `x86_64-unknown-linux-gnu` (Linux x86_64)
-- `aarch64-unknown-linux-gnu` (Linux ARM64) 
+- `aarch64-unknown-linux-gnu` (Linux ARM64)
 - `x86_64-apple-darwin` (macOS Intel)
 - `aarch64-apple-darwin` (macOS Apple Silicon)
 - `x86_64-unknown-linux-musl` (Alpine Linux x86_64, release only)
@@ -419,36 +440,94 @@ The CI system automatically builds multiple targets:
 - `x86_64-pc-windows-msvc` (Windows x64, release only)
 
 **WASM Filter:**
+
 - `wasm32-unknown-unknown` (WebAssembly)
 
 **Shared Library Plugin:**
+
 - Same targets as CLI for Linux/macOS (generates `.so`/`.dylib`)
 
 **Container Images:**
-- `linux/amd64`, `linux/arm64` (published to GitHub Container Registry)
 
-**Local Development:**
-```bash
-# Build CLI for your platform
-cargo build --release --bin logcheck-filter
+- `linux/amd64` (published to GitHub Container Registry)
 
-# Build WASM filter  
-cargo build --release --target wasm32-unknown-unknown --lib
+### Docker Build Architecture
 
-# Or use make shortcuts (auto-detects your platform)
-make build        # WASM filter
-make build-cli    # CLI for native platform
-make build-plugin # Shared library for native platform
+The project uses a multi-stage Docker build with [cargo-chef](https://github.com/LukeMathWalker/cargo-chef) for optimal dependency caching:
 
-# Build for all platforms (requires cross-compilation setup)
-make build-all-cli    # All CLI targets
-make build-all-plugin # All plugin targets
-
-# View all available targets
-make help
+```mermaid
+graph TB
+    chef["chef<br/>Base image with cargo-chef installed<br/><i>rust:1.84-slim</i>"]
+    
+    chef --> planner["planner<br/>Analyze project & create recipe<br/><i>cargo chef prepare</i>"]
+    chef --> base["builder-base<br/>Add Rust targets<br/><i>x86_64 + wasm32</i>"]
+    
+    planner --> |recipe.json| base
+    
+    base --> native["native-deps<br/>Cook x86_64 dependencies<br/><i>cargo chef cook --target x86_64</i><br/>🔄 Cached layer"]
+    base --> wasm["wasm-deps<br/>Cook WASM dependencies<br/><i>cargo chef cook --target wasm32</i><br/>🔄 Cached layer"]
+    
+    native --> cli["cli-builder<br/>Build native binary<br/><i>cargo build --bin logcheck-filter</i>"]
+    wasm --> wasmb["wasm-builder<br/>Build WASM library<br/><i>cargo build --lib</i>"]
+    
+    cli --> final["fluent-bit:4.2.2<br/>Runtime image"]
+    wasmb --> final
+    
+    style chef fill:#e1f5ff
+    style planner fill:#fff3cd
+    style base fill:#fff3cd
+    style native fill:#d4edda
+    style wasm fill:#d4edda
+    style cli fill:#cce5ff
+    style wasmb fill:#cce5ff
+    style final fill:#d1ecf1
 ```
 
+**Benefits:**
+
+- 🚀 **Fast rebuilds**: Dependencies cached separately from source code
+- ⚡ **Parallel builds**: Native and WASM deps build in parallel
+- 📦 **Smaller layers**: Only source changes trigger rebuilds
+- 🔄 **Smart caching**: Recipe layer only rebuilds when Cargo.toml changes
+
+**Local Development:**
+
+This project uses [cargo-xtask](https://github.com/matklad/cargo-xtask) for build automation:
+
+```bash
+# Quick start - show all available commands
+cargo xtask --help
+
+# Build everything (CLI + WASM + plugin)
+cargo xtask build-all --release
+
+# Build specific targets
+cargo xtask build-cli --release     # CLI for your platform
+cargo xtask build-wasm --release    # WASM filter
+cargo xtask build-plugin --release  # Shared library
+
+# Build for all platforms (requires cross-compilation setup)
+cargo xtask build-all-cli --release
+cargo xtask build-all-plugin --release
+
+# Install CLI locally
+cargo xtask install-cli  # Installs to ~/.local/bin
+
+# Generate documentation
+cargo xtask docs         # API docs + CLI reference + man pages
+cargo xtask docs --open  # Open API docs in browser
+
+# Testing
+cargo test                          # Unit tests
+cargo xtask test-integration        # Integration tests
+cargo xtask test-json               # WASM filter test (Docker)
+cargo xtask test-msgpack            # WASM filter test (Docker)
+```
+
+See [docs/xtask-guide.md](docs/xtask-guide.md) for complete xtask documentation.
+
 **Cross-compilation setup** (for build-all targets):
+
 ```bash
 # Install targets
 rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
@@ -462,15 +541,17 @@ rustup target add x86_64-pc-windows-msvc wasm32-unknown-unknown
 ### Testing
 
 **Automated CI Testing:**
+
 - **Format & Lint**: Rust formatting and clippy checks
 - **Unit Tests**: All tests on `x86_64-unknown-linux-gnu`
 - **Code Coverage**: Generated with `cargo-tarpaulin`
 - **Security Audit**: Vulnerability scanning on PRs
 - **Binary Size Analysis**: Tracks CLI and WASM binary size
 - **Production Rules**: Tests against real logcheck-database package
-- **Container**: Multi-architecture image validation
+- **Container**: Single-architecture image validation
 
 **Manual Testing:**
+
 ```bash
 # Run all tests
 cargo test
@@ -479,8 +560,8 @@ cargo test
 echo "Failed password for admin" | ./target/release/logcheck-filter --rules /etc/logcheck stdin
 
 # Test WASM filter with Docker
-make test_json     # Test JSON format
-make test_msgpack  # Test MessagePack format
+cargo xtask test-json     # Test JSON format
+cargo xtask test-msgpack  # Test MessagePack format
 ```
 
 Expected output:
@@ -535,6 +616,7 @@ src/
 ## 📚 Documentation
 
 See the `plans/` directory for detailed implementation documentation:
+
 - **[README.md](plans/README.md)** - Overview of all planning documents
 - **[CLI-IMPLEMENTATION-GUIDE.md](plans/CLI-IMPLEMENTATION-GUIDE.md)** - Comprehensive implementation guide
 - **[PURE-RUST-JOURNALD.md](plans/PURE-RUST-JOURNALD.md)** - Pure Rust journald integration research

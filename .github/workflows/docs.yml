@@ -38,18 +38,20 @@ jobs:
         with:
           key: docs
         
-      - name: Build documentation
+      - name: Build documentation with xtask
         run: |
-          cargo doc --no-deps --all-features --document-private-items --target x86_64-unknown-linux-gnu
+          # Generate all docs (API + CLI reference + man pages)
+          cargo xtask docs
+          # The API docs are in target/doc, CLI docs in docs/
           # Create index redirect to main crate
-          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/x86_64-unknown-linux-gnu/doc/index.html
+          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/doc/index.html
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
           
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: target/x86_64-unknown-linux-gnu/doc
+          folder: target/doc
           branch: gh-pages
           clean: true
           clean-exclude: pr-preview/  # Preserve PR previews
@@ -80,19 +82,20 @@ jobs:
         with:
           key: docs
         
-      - name: Build documentation
+      - name: Build documentation with xtask
         if: github.event.action != 'closed'
         run: |
-          cargo doc --no-deps --all-features --document-private-items --target x86_64-unknown-linux-gnu
+          # Generate all docs (API + CLI reference + man pages)
+          cargo xtask docs
           # Create index redirect to main crate for PR preview
-          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/x86_64-unknown-linux-gnu/doc/index.html
+          echo '<meta http-equiv="refresh" content="0; url=logcheck_fluent_bit_filter/index.html">' > target/doc/index.html
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
           
       - name: Deploy PR preview
         uses: rossjrw/pr-preview-action@v1
         with:
-          source-dir: target/x86_64-unknown-linux-gnu/doc
+          source-dir: target/doc
           preview-branch: gh-pages
           umbrella-dir: pr-preview
           action: auto

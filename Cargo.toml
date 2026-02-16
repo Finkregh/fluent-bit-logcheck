@@ -1,3 +1,15 @@
+[workspace]
+members = [".", "xtask"]
+# Don't build xtask by default - it needs host target not WASM
+default-members = ["."]
+resolver = "2"
+
+[workspace.dependencies]
+# Shared dependencies
+clap = { version = "4.5", features = ["derive", "cargo"] }
+serde = { version = "1.0", features = ["derive"] }
+anyhow = "1.0"
+
 [package]
 name = "logcheck-fluent-bit-filter"
 version = "0.1.0"
@@ -25,7 +37,7 @@ rmp = "0.8.12"
 rmpv = "1.0.2"
 
 # JSON support
-serde = { version = "1.0", features = ["derive"] }
+serde = { workspace = true }
 serde_json = "1.0"
 
 # Regex for logcheck rules
@@ -35,8 +47,8 @@ regex = "1.12"
 once_cell = "1.21"
 
 # CLI dependencies
-clap = { version = "4.5", features = ["derive", "cargo"] }
-anyhow = "1.0"
+clap = { workspace = true }
+anyhow = { workspace = true }
 thiserror = "2"
 colored = "3"
 
@@ -59,6 +71,6 @@ codegen-units = 1
 panic = "abort"
 
 [build-dependencies]
-clap = { version = "4.5", features = ["derive", "cargo"] }
+clap = { workspace = true }
 clap-markdown = "0.1.5"
 clap_mangen = "0.2.31"
