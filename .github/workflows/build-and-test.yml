@@ -121,14 +121,12 @@ jobs:
         include:
           - name: "CLI Binary"
             args: "--release --bin logcheck-filter --crates --target x86_64-unknown-linux-gnu"
-            toolchain: "stable"
           - name: "WASM Filter"
             args: "--release --lib --crates --target wasm32-unknown-unknown"
-            toolchain: "stable"
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@${{ matrix.toolchain }}
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
 
