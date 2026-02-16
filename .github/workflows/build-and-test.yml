@@ -2,9 +2,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 env:
   CARGO_TERM_COLOR: always
@@ -21,7 +21,7 @@ jobs:
         with:
           components: rustfmt
           targets: wasm32-unknown-unknown
-      
+
       - name: Check formatting
         run: cargo fmt --all -- --check
 
@@ -38,9 +38,9 @@ jobs:
         with:
           components: clippy
           targets: wasm32-unknown-unknown
-      
+
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Run Clippy Check
         uses: actions-rs/clippy-check@v1
         with:
@@ -57,9 +57,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      
+
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Run tests
         run: cargo test --all-features --target x86_64-unknown-linux-gnu
 
@@ -73,23 +73,23 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      
+
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Install cargo-tarpaulin
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-tarpaulin
-      
+
       - name: Run coverage with xtask
         run: cargo xtask coverage
-      
+
       # Comment out codecov upload as requested
       # - name: Upload to codecov.io
       #   uses: codecov/codecov-action@v4
       #   with:
       #     file: target/coverage/cobertura.xml
-      
+
       - name: Archive coverage results
         uses: actions/upload-artifact@v6
         if: always()
@@ -113,12 +113,12 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   bloat-check:
-    name: Binary Size Analysis - ${{ matrix.target.name }}
+    name: Binary Size Analysis - ${{ matrix.name }}
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     strategy:
       matrix:
-        target:
+        include:
           - name: "CLI Binary"
             args: "--release --bin logcheck-filter --crates --target x86_64-unknown-linux-gnu"
             toolchain: "stable"
@@ -127,16 +127,16 @@ jobs:
             toolchain: "stable"
     steps:
       - uses: actions/checkout@v6
-      
-      - uses: dtolnay/rust-toolchain@${{ matrix.target.toolchain }}
+
+      - uses: dtolnay/rust-toolchain@${{ matrix.toolchain }}
         with:
           targets: wasm32-unknown-unknown
-      
+
       - name: Run Cargo Bloat
         uses: orf/cargo-bloat-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          bloat_args: "${{ matrix.target.args }}"
+          bloat_args: "${{ matrix.args }}"
 
   build-cli:
     name: Build CLI - ${{ matrix.target }}
@@ -148,19 +148,19 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            binary-suffix: ''
+            binary-suffix: ""
             use-cross: false
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
-            binary-suffix: ''
+            binary-suffix: ""
             use-cross: true
           - target: x86_64-apple-darwin
-            os: macos-13  # Intel runners
-            binary-suffix: ''
+            os: macos-13 # Intel runners
+            binary-suffix: ""
             use-cross: false
           - target: aarch64-apple-darwin
-            os: macos-14  # Apple Silicon runners
-            binary-suffix: ''
+            os: macos-14 # Apple Silicon runners
+            binary-suffix: ""
             use-cross: false
 
     steps:
@@ -169,15 +169,15 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      
+
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
-      
+
       - name: Build CLI natively with xtask
         if: ${{ !matrix.use-cross }}
         run: cargo xtask build-cli --release
-      
+
       - name: Build CLI with cross-compilation
         if: ${{ matrix.use-cross }}
         uses: houseabsolute/actions-rust-cross@v1
@@ -187,7 +187,7 @@ jobs:
           args: "--locked --release --bin logcheck-filter"
           strip: true
           use-rust-cache: true
-      
+
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v6
         with:
@@ -205,14 +205,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      
+
       - uses: Swatinem/rust-cache@v2
         with:
           key: wasm32-unknown-unknown
-      
+
       - name: Build WASM filter with xtask
         run: cargo xtask build-wasm --release
-      
+
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v6
         with:
@@ -229,13 +229,13 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            lib-extension: 'so'
+            lib-extension: "so"
           - target: aarch64-unknown-linux-gnu
-            lib-extension: 'so'
+            lib-extension: "so"
           - target: x86_64-apple-darwin
-            lib-extension: 'dylib'
+            lib-extension: "dylib"
           - target: aarch64-apple-darwin
-            lib-extension: 'dylib'
+            lib-extension: "dylib"
 
     steps:
       - uses: actions/checkout@v6
@@ -248,7 +248,7 @@ jobs:
           args: "--locked --release --lib"
           strip: true
           use-rust-cache: true
-      
+
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v6
         with:
