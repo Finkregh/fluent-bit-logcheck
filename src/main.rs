@@ -19,6 +19,15 @@ fn run() -> Result<()> {
     // When --output-file is specified, info goes to stdout; otherwise stderr
     let info_to_stdout = cli.output_file.is_some();
 
+    // Validate that the rules directory exists
+    if !cli.rules.exists() {
+        return Err(anyhow::anyhow!(
+            "Rules directory does not exist: {}\n\
+             Please specify a valid rules directory with --rules, or ensure /etc/logcheck exists.",
+            cli.rules.display()
+        ));
+    }
+
     // Load logcheck database
     if info_to_stdout {
         println!("Loading logcheck rules from: {}", cli.rules.display());

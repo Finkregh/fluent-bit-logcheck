@@ -8,8 +8,12 @@ use std::path::PathBuf;
 #[command(about = "Filter logs using logcheck rules")]
 #[command(version)]
 pub struct Cli {
-    /// Path to logcheck rules directory
-    #[arg(long, required = true, help = "Path to logcheck rules directory")]
+    /// Path to logcheck rules directory (defaults to /etc/logcheck)
+    #[arg(
+        long,
+        default_value = "/etc/logcheck",
+        help = "Path to logcheck rules directory"
+    )]
     pub rules: PathBuf,
 
     /// Output format
@@ -109,7 +113,7 @@ mod tests {
 
     #[test]
     fn test_cli_parsing() {
-        // Test basic file input
+        // Test basic file input with explicit rules path
         let args = vec![
             "logcheck-filter",
             "--rules",
@@ -125,6 +129,15 @@ mod tests {
         assert!(!cli.stats);
         assert!(!cli.color);
         assert!(matches!(cli.input, InputSource::File { .. }));
+    }
+
+    #[test]
+    fn test_cli_default_rules() {
+        // Test that rules defaults to /etc/logcheck when not specified
+        let args = vec!["logcheck-filter", "stdin"];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        assert_eq!(cli.rules, PathBuf::from("/etc/logcheck"));
     }
 
     #[test]
