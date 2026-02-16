@@ -9,6 +9,7 @@ url="https://github.com/finkregh/fluent-bit-logcheck"
 license=('Apache-2.0' 'MIT')
 depends=('fluent-bit')
 makedepends=('cargo' 'rust')
+optdepends=('logcheck-database: official Debian logcheck rule database')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
 b2sums=('SKIP')
 options=('!lto')

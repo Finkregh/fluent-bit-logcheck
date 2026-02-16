@@ -28,6 +28,7 @@ Add to your Fluent-Bit configuration:
 ```
 
 See the example configuration:
+
 ```bash
 cat /usr/share/doc/fluent-bit-logcheck-filter/examples/example-fluent-bit.conf
 ```

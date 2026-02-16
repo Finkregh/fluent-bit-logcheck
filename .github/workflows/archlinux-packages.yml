@@ -1,0 +1,180 @@
+name: Build Arch Linux Packages
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-logcheck-filter-pkg:
+    name: Build logcheck-filter Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build logcheck-filter package
+        uses: ouuan/pkgbuild-action@master
+        id: build-logcheck-filter
+        with:
+          path: pkgbuild/logcheck-filter
+
+      - name: Upload logcheck-filter package
+        uses: actions/upload-artifact@v4
+        with:
+          name: logcheck-filter-pkg-${{ github.run_id }}
+          path: ${{ steps.build-logcheck-filter.outputs.pkgfile }}
+          retention-days: 30
+
+  build-fluent-bit-filter-pkg:
+    name: Build fluent-bit-logcheck-filter Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build fluent-bit-logcheck-filter package
+        uses: ouuan/pkgbuild-action@master
+        id: build-fluent-bit-filter
+        with:
+          path: pkgbuild/fluent-bit-logcheck-filter
+
+      - name: Upload fluent-bit-logcheck-filter package
+        uses: actions/upload-artifact@v4
+        with:
+          name: fluent-bit-logcheck-filter-pkg-${{ github.run_id }}
+          path: ${{ steps.build-fluent-bit-filter.outputs.pkgfile }}
+          retention-days: 30
+
+  build-logcheck-database-pkg:
+    name: Build logcheck-database Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build logcheck-database package
+        uses: ouuan/pkgbuild-action@master
+        id: build-logcheck-database
+        with:
+          path: pkgbuild/logcheck-database
+
+      - name: Upload logcheck-database package
+        uses: actions/upload-artifact@v4
+        with:
+          name: logcheck-database-pkg-${{ github.run_id }}
+          path: ${{ steps.build-logcheck-database.outputs.pkgfile }}
+          retention-days: 30
+
+  package-summary:
+    name: Package Build Summary
+    runs-on: ubuntu-latest
+    needs: [build-logcheck-filter-pkg, build-fluent-bit-filter-pkg, build-logcheck-database-pkg]
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write  # Required for PR comments
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate package summary
+        run: |
+          echo "# 📦 Arch Linux Package Build Summary" > package-summary.md
+          echo "" >> package-summary.md
+          echo "Build completed for commit \`${{ github.sha }}\`" >> package-summary.md
+          echo "" >> package-summary.md
+          echo "## Package Status" >> package-summary.md
+          echo "" >> package-summary.md
+          
+          # Check job statuses
+          if [[ "${{ needs.build-logcheck-filter-pkg.result }}" == "success" ]]; then
+            echo "✅ **logcheck-filter**: Built successfully" >> package-summary.md
+          else
+            echo "❌ **logcheck-filter**: Build failed" >> package-summary.md
+          fi
+          
+          if [[ "${{ needs.build-fluent-bit-filter-pkg.result }}" == "success" ]]; then
+            echo "✅ **fluent-bit-logcheck-filter**: Built successfully" >> package-summary.md
+          else
+            echo "❌ **fluent-bit-logcheck-filter**: Build failed" >> package-summary.md
+          fi
+          
+          if [[ "${{ needs.build-logcheck-database-pkg.result }}" == "success" ]]; then
+            echo "✅ **logcheck-database**: Built successfully" >> package-summary.md
+          else
+            echo "❌ **logcheck-database**: Build failed" >> package-summary.md
+          fi
+          
+          echo "" >> package-summary.md
+          echo "## Installation" >> package-summary.md
+          echo "" >> package-summary.md
+          echo "Download the built packages from the workflow artifacts and install with:" >> package-summary.md
+          echo "" >> package-summary.md
+          echo '```bash' >> package-summary.md
+          echo "# Install all packages" >> package-summary.md
+          echo "sudo pacman -U logcheck-filter-*.pkg.tar.zst \\" >> package-summary.md
+          echo "               fluent-bit-logcheck-filter-*.pkg.tar.zst \\" >> package-summary.md
+          echo "               logcheck-database-*.pkg.tar.zst" >> package-summary.md
+          echo "" >> package-summary.md
+          echo "# Or install individually as needed" >> package-summary.md
+          echo "sudo pacman -U logcheck-filter-*.pkg.tar.zst" >> package-summary.md
+          echo '```' >> package-summary.md
+          echo "" >> package-summary.md
+          echo "---" >> package-summary.md
+          echo "*Generated on $(date)*" >> package-summary.md
+
+      - name: Comment PR with package summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const summary = fs.readFileSync('package-summary.md', 'utf8');
+              
+              // Look for existing comment to update instead of creating new ones
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              const botComment = comments.data.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('📦 Arch Linux Package Build Summary')
+              );
+              
+              if (botComment) {
+                // Update existing comment
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: summary
+                });
+                console.log('Updated existing package build summary comment');
+              } else {
+                // Create new comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: summary
+                });
+                console.log('Created new package build summary comment');
+              }
+            } catch (error) {
+              console.error('Error posting package summary:', error);
+              // Don't fail the job if comment posting fails
+              core.warning('Failed to post PR comment, but package builds completed');
+            }
+
+      - name: Archive package summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-build-summary
+          path: package-summary.md
+          retention-days: 30
