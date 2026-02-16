@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["args","input","output","processor"],"type":["Result"]};
