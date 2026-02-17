@@ -1,3 +1,4 @@
+use crate::regex_conversion;
 use regex::{Regex, RegexSet};
 use serde;
 use std::collections::HashMap;
@@ -84,38 +85,10 @@ impl LogcheckDatabase {
     /// Convert POSIX character classes to Rust regex equivalents
     /// Logcheck rules use POSIX classes like \[\[:alnum:\]\], \[\[:digit:\]\], etc.
     /// which are not supported by Rust's regex crate
+    ///
+    /// This now uses the centralized regex_conversion module
     fn convert_posix_classes(pattern: &str) -> String {
-        let mut result = pattern.to_string();
-
-        // Replace POSIX character classes with Rust equivalents
-        // Note: Order matters for nested replacements
-        let replacements = vec![
-            ("[[:alnum:]]", "a-zA-Z0-9"),
-            ("[[:alpha:]]", "a-zA-Z"),
-            ("[[:digit:]]", "0-9"),
-            ("[[:xdigit:]]", "0-9a-fA-F"),
-            ("[[:lower:]]", "a-z"),
-            ("[[:upper:]]", "A-Z"),
-            ("[[:space:]]", "\\s"),
-            ("[[:blank:]]", " \\t"),
-            ("[[:punct:]]", "!\"#$%&'()*+,\\-./:;<=>?@\\[\\\\\\]^_`{|}~"),
-            ("[[:print:]]", "\\x20-\\x7E"),
-            ("[[:graph:]]", "!-~"),
-            ("[[:cntrl:]]", "\\x00-\\x1F\\x7F"),
-        ];
-
-        for (posix_class, rust_equiv) in replacements {
-            // When POSIX class appears inside a character class, just replace the contents
-            // e.g., [._[:alnum:]-] becomes [._a-zA-Z0-9-]
-            result = result.replace(posix_class, rust_equiv);
-        }
-
-        // Escape unescaped curly braces that aren't part of quantifiers
-        // This is a simplified approach - just escape standalone braces
-        result = result.replace(" { ", " \\{ ");
-        result = result.replace(" } ", " \\} ");
-
-        result
+        regex_conversion::posix_to_rust(pattern)
     }
 
     /// Load logcheck database from traditional directory structure

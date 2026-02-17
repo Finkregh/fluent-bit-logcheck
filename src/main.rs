@@ -1,9 +1,13 @@
 use anyhow::Result;
 use logcheck_fluent_bit_filter::cli::{
-    args::Cli, input::create_input, output::create_output, processor::LogProcessor,
+    analyzer::UnmatchedCollector, args::Cli, input::create_input, output::create_output,
+    processor::LogProcessor,
 };
 use logcheck_fluent_bit_filter::rules::LogcheckDatabase;
 use std::process;
+
+#[cfg(target_os = "linux")]
+use logcheck_fluent_bit_filter::cli::args::{InputSource, JournaldMode};
 
 fn main() {
     if let Err(e) = run() {
@@ -54,6 +58,36 @@ fn run() -> Result<()> {
         );
     }
 
+    // Check if we're in analyze mode
+    #[cfg(target_os = "linux")]
+    let analyze_mode = matches!(
+        cli.input,
+        InputSource::Journald {
+            mode: Some(JournaldMode::Analyze { .. }),
+            ..
+        }
+    );
+
+    #[cfg(not(target_os = "linux"))]
+    let analyze_mode = false;
+
+    let min_group_size = if analyze_mode {
+        #[cfg(target_os = "linux")]
+        if let InputSource::Journald {
+            mode: Some(JournaldMode::Analyze { min_group_size }),
+            ..
+        } = &cli.input
+        {
+            *min_group_size
+        } else {
+            2
+        }
+        #[cfg(not(target_os = "linux"))]
+        2
+    } else {
+        2
+    };
+
     // Create input source
     let mut input = create_input(&cli.input)?;
     if info_to_stdout {
@@ -67,10 +101,43 @@ fn run() -> Result<()> {
 
     // Create processor and run
     let processor = LogProcessor::new(database);
-    let processing_stats = processor.process(input.as_mut(), output.as_mut())?;
 
-    // Show statistics if requested
-    if cli.stats {
+    let processing_stats = if analyze_mode {
+        // Analyze mode: collect unmatched entries
+        let mut collector = UnmatchedCollector::new();
+        let stats = processor.process_with_collector(
+            input.as_mut(),
+            output.as_mut(),
+            Some(&mut collector),
+        )?;
+
+        // Show statistics if requested
+        if cli.stats {
+            stats.print_summary_to(input.source_name(), info_to_stdout);
+        }
+
+        // Launch analyzer
+        if info_to_stdout {
+            println!(
+                "Launching analyzer for {} unmatched entries...",
+                collector.len()
+            );
+        } else {
+            eprintln!(
+                "Launching analyzer for {} unmatched entries...",
+                collector.len()
+            );
+        }
+
+        collector.analyze(min_group_size)?;
+        stats
+    } else {
+        // Normal mode: just process
+        processor.process(input.as_mut(), output.as_mut())?
+    };
+
+    // Show statistics if requested (and not already shown in analyze mode)
+    if cli.stats && !analyze_mode {
         processing_stats.print_summary_to(input.source_name(), info_to_stdout);
     }
 

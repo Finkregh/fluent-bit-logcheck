@@ -16,7 +16,7 @@ const MUSL_TARGETS: &[&str] = &["x86_64-unknown-linux-musl", "aarch64-unknown-li
 const WINDOWS_TARGETS: &[&str] = &["x86_64-pc-windows-msvc"];
 
 /// Detect native target triple
-fn detect_native_target() -> String {
+pub fn detect_native_target() -> String {
     // Use rustc to detect the host triple
     let output = Command::new("rustc")
         .arg("-vV")

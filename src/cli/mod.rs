@@ -1,3 +1,4 @@
+pub mod analyzer;
 pub mod args;
 pub mod input;
 pub mod output;

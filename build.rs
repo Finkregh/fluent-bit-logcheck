@@ -95,7 +95,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let docs_dir = Path::new("docs");
     if !docs_dir.exists() {
         fs::create_dir_all(docs_dir)?;
-        println!("cargo:warning=Created docs/ directory");
     }
 
     // Generate the CLI command
@@ -127,11 +126,6 @@ fn generate_markdown_docs(
     let markdown_path = docs_dir.join("cli-reference.md");
     fs::write(&markdown_path, &markdown_content)?;
 
-    println!(
-        "cargo:warning=Generated markdown CLI reference at {}",
-        markdown_path.display()
-    );
-
     Ok(markdown_content)
 }
 
@@ -150,8 +144,6 @@ fn generate_man_pages(
 
     let man_path = man_dir.join("logcheck-filter.1");
     fs::write(&man_path, buffer)?;
-
-    println!("cargo:warning=Generated man page at {}", man_path.display());
 
     Ok(())
 }
@@ -298,11 +290,6 @@ fn generate_html_docs(docs_dir: &Path, markdown: &str) -> Result<(), Box<dyn std
 
     let html_path = docs_dir.join("cli-reference.html");
     fs::write(&html_path, html_content)?;
-
-    println!(
-        "cargo:warning=Generated HTML CLI reference at {}",
-        html_path.display()
-    );
 
     Ok(())
 }

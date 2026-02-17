@@ -56,6 +56,16 @@ anyhow = { workspace = true }
 thiserror = "2"
 colored = "3"
 
+# TUI dependencies (for analyzer mode)
+ratatui = "0.28"
+crossterm = "0.28"
+
+# Regex generation from examples
+grex = "1.4"
+
+# Timestamp generation for rule files
+chrono = "0.4"
+
 # CLI documentation generation
 clap-markdown = "0.1.4"
 clap_mangen = "0.2.23"
