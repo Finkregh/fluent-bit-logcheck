@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["AppState"],"fn":["run_analyzer","run_app","ui"],"struct":["App"]};
