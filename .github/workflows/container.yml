@@ -24,13 +24,13 @@ jobs:
       - name: Set image name to lowercase
         id: image_name
         run: |
-          echo "value=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "value=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Sanitize cache scope
         id: cache_scope
         run: |
           # Replace slashes with hyphens for valid Docker tag format
-          echo "value=$(echo '${{ github.ref_name }}' | tr '/' '-' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "value=$(echo '${{ github.ref_name }}' | tr '/' '-' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -96,53 +96,53 @@ jobs:
           # Extract the image reference for testing
           IMAGE_REF=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
 
-          echo "### Container Build Test :gear:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Container Build Test :gear:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           # Test AMD64 architecture
-          echo "Testing AMD64 architecture..." >> $GITHUB_STEP_SUMMARY
-          if docker run --rm --platform linux/amd64 ${IMAGE_REF} logcheck-filter --version 2>/dev/null; then
-            echo "✅ AMD64 architecture test passed" >> $GITHUB_STEP_SUMMARY
+          echo "Testing AMD64 architecture..." >> "$GITHUB_STEP_SUMMARY"
+          if docker run --rm --platform linux/amd64 "${IMAGE_REF}" logcheck-filter --version 2>/dev/null; then
+            echo "✅ AMD64 architecture test passed" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "❌ AMD64 architecture test failed" >> $GITHUB_STEP_SUMMARY
+            echo "❌ AMD64 architecture test failed" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Build Performance:**" >> $GITHUB_STEP_SUMMARY
-          echo "- cargo-chef for optimal dependency caching" >> $GITHUB_STEP_SUMMARY
-          echo "- Advanced caching with multi-source fallback" >> $GITHUB_STEP_SUMMARY
-          echo "- Separate cache scopes for optimal performance" >> $GITHUB_STEP_SUMMARY
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Build Performance:**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- cargo-chef for optimal dependency caching" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Advanced caching with multi-source fallback" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Separate cache scopes for optimal performance" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summary
         if: github.event_name != 'pull_request'
         run: |
-          echo "### Container Image Published :rocket:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Registry:** ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${{ steps.image_name.outputs.value }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
-          echo '```bash' >> $GITHUB_STEP_SUMMARY
-          echo "docker pull $(echo '${{ steps.meta.outputs.tags }}' | head -n1)" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Architecture:**" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ linux/amd64 (Intel/AMD x86_64)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Performance Optimizations:**" >> $GITHUB_STEP_SUMMARY
-          echo "- 🚀 cargo-chef for optimal dependency caching" >> $GITHUB_STEP_SUMMARY
-          echo "- 💾 Advanced caching with registry + GHA fallback" >> $GITHUB_STEP_SUMMARY
-          echo "- 📦 Optimized layer caching for Rust dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "### Container Image Published :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Registry:** ${{ env.REGISTRY }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Image:** ${{ steps.image_name.outputs.value }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Tags:**" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.meta.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Pull command:**" >> "$GITHUB_STEP_SUMMARY"
+          echo '```bash' >> "$GITHUB_STEP_SUMMARY"
+          echo "docker pull $(echo '${{ steps.meta.outputs.tags }}' | head -n1)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Architecture:**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ linux/amd64 (Intel/AMD x86_64)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Performance Optimizations:**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 🚀 cargo-chef for optimal dependency caching" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 💾 Advanced caching with registry + GHA fallback" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 📦 Optimized layer caching for Rust dependencies" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summary (PR)
         if: github.event_name == 'pull_request'
         run: |
-          echo "### Container Build Validation :white_check_mark:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Container image built successfully for validation." >> $GITHUB_STEP_SUMMARY
-          echo "Image will be pushed to registry after merge to main branch." >> $GITHUB_STEP_SUMMARY
+          echo "### Container Build Validation :white_check_mark:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Container image built successfully for validation." >> "$GITHUB_STEP_SUMMARY"
+          echo "Image will be pushed to registry after merge to main branch." >> "$GITHUB_STEP_SUMMARY"
