@@ -26,6 +26,7 @@ pub fn create_input(source: &InputSource) -> Result<Box<dyn LogInput>> {
             unit,
             follow,
             lines,
+            mode: _,
         } => Ok(Box::new(journald::JournaldInput::new(
             unit.clone(),
             *follow,
@@ -53,6 +54,7 @@ mod tests {
             unit: Some("sshd".to_string()),
             follow: false,
             lines: Some(10),
+            mode: None,
         };
         let input = create_input(&source).unwrap();
         assert!(input.source_name().contains("journald"));
