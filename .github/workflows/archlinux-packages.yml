@@ -20,19 +20,23 @@ jobs:
       - name: Update PKGBUILD source reference
         run: |
           # Determine the git reference (branch or tag)
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # Extract tag name
-            GIT_REF="${{ github.ref_name }}"
-            REF_TYPE="tag"
-          elif [[ "${{ github.ref }}" == refs/heads/* ]]; then
-            # Extract branch name
-            GIT_REF="${{ github.ref_name }}"
-            REF_TYPE="branch"
-          else
-            # Fallback for PRs - use the head ref
-            GIT_REF="${{ github.head_ref }}"
-            REF_TYPE="branch"
-          fi
+          case "$GITHUB_REF" in
+            refs/tags/*)
+              # Extract tag name
+              GIT_REF="$GITHUB_REF_NAME"
+              REF_TYPE="tag"
+              ;;
+            refs/heads/*)
+              # Extract branch name
+              GIT_REF="$GITHUB_REF_NAME"
+              REF_TYPE="branch"
+              ;;
+            *)
+              # Fallback for PRs - use the head ref
+              GIT_REF="$GITHUB_HEAD_REF"
+              REF_TYPE="branch"
+              ;;
+          esac
 
           echo "Git reference: $GIT_REF (type: $REF_TYPE)"
 
@@ -56,6 +60,15 @@ jobs:
         with:
           path: pkgbuild/logcheck-filter
 
+      - name: Namcap built logcheck-filter package
+        if: github.event_name == 'pull_request'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            archlinux:latest \
+            bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-logcheck-filter.outputs.pkgfile }}"
+
       - name: Upload logcheck-filter package
         uses: actions/upload-artifact@v4
         with:
@@ -72,19 +85,23 @@ jobs:
       - name: Update PKGBUILD source reference
         run: |
           # Determine the git reference (branch or tag)
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # Extract tag name
-            GIT_REF="${{ github.ref_name }}"
-            REF_TYPE="tag"
-          elif [[ "${{ github.ref }}" == refs/heads/* ]]; then
-            # Extract branch name
-            GIT_REF="${{ github.ref_name }}"
-            REF_TYPE="branch"
-          else
-            # Fallback for PRs - use the head ref
-            GIT_REF="${{ github.head_ref }}"
-            REF_TYPE="branch"
-          fi
+          case "$GITHUB_REF" in
+            refs/tags/*)
+              # Extract tag name
+              GIT_REF="$GITHUB_REF_NAME"
+              REF_TYPE="tag"
+              ;;
+            refs/heads/*)
+              # Extract branch name
+              GIT_REF="$GITHUB_REF_NAME"
+              REF_TYPE="branch"
+              ;;
+            *)
+              # Fallback for PRs - use the head ref
+              GIT_REF="$GITHUB_HEAD_REF"
+              REF_TYPE="branch"
+              ;;
+          esac
 
           echo "Git reference: $GIT_REF (type: $REF_TYPE)"
 
@@ -108,6 +125,15 @@ jobs:
         with:
           path: pkgbuild/fluent-bit-logcheck-filter
 
+      - name: Namcap built fluent-bit-logcheck-filter package
+        if: github.event_name == 'pull_request'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            archlinux:latest \
+            bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-fluent-bit-filter.outputs.pkgfile }}"
+
       - name: Upload fluent-bit-logcheck-filter package
         uses: actions/upload-artifact@v4
         with:
@@ -126,6 +152,15 @@ jobs:
         id: build-logcheck-database
         with:
           path: pkgbuild/logcheck-database
+
+      - name: Namcap built logcheck-database package
+        if: github.event_name == 'pull_request'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            archlinux:latest \
+            bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-logcheck-database.outputs.pkgfile }}"
 
       - name: Upload logcheck-database package
         uses: actions/upload-artifact@v4
@@ -152,49 +187,51 @@ jobs:
 
       - name: Generate package summary
         run: |
-          echo "# 📦 Arch Linux Package Build Summary" > package-summary.md
-          echo "" >> package-summary.md
-          echo "Build completed for commit \`${{ github.sha }}\`" >> package-summary.md
-          echo "" >> package-summary.md
-          echo "## Package Status" >> package-summary.md
-          echo "" >> package-summary.md
+          {
+            echo "# 📦 Arch Linux Package Build Summary"
+            echo ""
+            echo "Build completed for commit \`${{ github.sha }}\`"
+            echo ""
+            echo "## Package Status"
+            echo ""
 
-          # Check job statuses
-          if [[ "${{ needs.build-logcheck-filter-pkg.result }}" == "success" ]]; then
-            echo "✅ **logcheck-filter**: Built successfully" >> package-summary.md
-          else
-            echo "❌ **logcheck-filter**: Build failed" >> package-summary.md
-          fi
+            # Check job statuses
+            if [[ "${{ needs.build-logcheck-filter-pkg.result }}" == "success" ]]; then
+              echo "✅ **logcheck-filter**: Built successfully"
+            else
+              echo "❌ **logcheck-filter**: Build failed"
+            fi
 
-          if [[ "${{ needs.build-fluent-bit-filter-pkg.result }}" == "success" ]]; then
-            echo "✅ **fluent-bit-logcheck-filter**: Built successfully" >> package-summary.md
-          else
-            echo "❌ **fluent-bit-logcheck-filter**: Build failed" >> package-summary.md
-          fi
+            if [[ "${{ needs.build-fluent-bit-filter-pkg.result }}" == "success" ]]; then
+              echo "✅ **fluent-bit-logcheck-filter**: Built successfully"
+            else
+              echo "❌ **fluent-bit-logcheck-filter**: Build failed"
+            fi
 
-          if [[ "${{ needs.build-logcheck-database-pkg.result }}" == "success" ]]; then
-            echo "✅ **logcheck-database**: Built successfully" >> package-summary.md
-          else
-            echo "❌ **logcheck-database**: Build failed" >> package-summary.md
-          fi
+            if [[ "${{ needs.build-logcheck-database-pkg.result }}" == "success" ]]; then
+              echo "✅ **logcheck-database**: Built successfully"
+            else
+              echo "❌ **logcheck-database**: Build failed"
+            fi
 
-          echo "" >> package-summary.md
-          echo "## Installation" >> package-summary.md
-          echo "" >> package-summary.md
-          echo "Download the built packages from the workflow artifacts and install with:" >> package-summary.md
-          echo "" >> package-summary.md
-          echo '```bash' >> package-summary.md
-          echo "# Install all packages" >> package-summary.md
-          echo "sudo pacman -U logcheck-filter-*.pkg.tar.zst \\" >> package-summary.md
-          echo "               fluent-bit-logcheck-filter-*.pkg.tar.zst \\" >> package-summary.md
-          echo "               logcheck-database-*.pkg.tar.zst" >> package-summary.md
-          echo "" >> package-summary.md
-          echo "# Or install individually as needed" >> package-summary.md
-          echo "sudo pacman -U logcheck-filter-*.pkg.tar.zst" >> package-summary.md
-          echo '```' >> package-summary.md
-          echo "" >> package-summary.md
-          echo "---" >> package-summary.md
-          echo "*Generated on $(date)*" >> package-summary.md
+            echo ""
+            echo "## Installation"
+            echo ""
+            echo "Download the built packages from the workflow artifacts and install with:"
+            echo ""
+            echo '```bash'
+            echo "# Install all packages"
+            echo "sudo pacman -U logcheck-filter-*.pkg.tar.zst \\" 
+            echo "               fluent-bit-logcheck-filter-*.pkg.tar.zst \\" 
+            echo "               logcheck-database-*.pkg.tar.zst"
+            echo ""
+            echo "# Or install individually as needed"
+            echo "sudo pacman -U logcheck-filter-*.pkg.tar.zst"
+            echo '```'
+            echo ""
+            echo "---"
+            echo "*Generated on $(date)*"
+          } > package-summary.md
 
       - name: Comment PR with package summary
         if: github.event_name == 'pull_request'

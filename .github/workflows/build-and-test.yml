@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt
           targets: wasm32-unknown-unknown
@@ -34,19 +34,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy
           targets: wasm32-unknown-unknown
 
-      - uses: Swatinem/rust-cache@v2
-
       - name: Run Clippy Check
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets --all-features -- -D warnings
-          name: "clippy"
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
   test:
     name: Test Suite
@@ -54,11 +48,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           targets: wasm32-unknown-unknown
-
-      - uses: Swatinem/rust-cache@v2
 
       - name: Run tests
         run: cargo test --all-features --target x86_64-unknown-linux-gnu
@@ -76,12 +68,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           targets: wasm32-unknown-unknown
           components: llvm-tools
-
-      - uses: Swatinem/rust-cache@v2
 
       - name: Restore ReportGenerator history cache
         uses: actions/cache@v4
@@ -116,10 +106,10 @@ jobs:
 
       - name: Publish coverage summary to job output
         id: coverage-summary
-        run: echo "summary_path=target/coverage/report/SummaryGithub.md" >> $GITHUB_OUTPUT
+        run: echo "summary_path=target/coverage/report/SummaryGithub.md" >> "$GITHUB_OUTPUT"
 
       - name: Publish coverage summary to job summary
-        run: cat target/coverage/report/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+        run: cat target/coverage/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment coverage summary on PR
         if: github.event_name == 'pull_request'
@@ -152,7 +142,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Security Audit
-        uses: actions-rs/audit-check@v1
+        uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -184,13 +174,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           targets: ${{ matrix.target }}
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.target }}
 
       - name: Build CLI natively with xtask
         if: ${{ !matrix.use-cross }}
@@ -220,13 +206,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           targets: wasm32-unknown-unknown
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: wasm32-unknown-unknown
 
       - name: Build WASM filter with xtask
         run: cargo xtask build-wasm --release
