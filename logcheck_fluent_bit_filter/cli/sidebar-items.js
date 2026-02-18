@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["args","input","output","processor"],"type":["Result"]};
+window.SIDEBAR_ITEMS = {"mod":["analyzer","args","input","output","processor"],"type":["Result"]};
