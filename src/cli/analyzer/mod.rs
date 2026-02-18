@@ -61,16 +61,15 @@ impl UnmatchedCollector {
         #[cfg(feature = "tui")]
         {
             tui::run_analyzer(pattern_groups, self.entries())?;
+            Ok(())
         }
 
         #[cfg(not(feature = "tui"))]
         {
-            anyhow::bail!(
+            Err(anyhow::anyhow!(
                 "TUI support is disabled; build with --features tui to enable analyzer UI"
-            );
+            ))
         }
-
-        Ok(())
     }
 }
 

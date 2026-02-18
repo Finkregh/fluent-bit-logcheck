@@ -137,7 +137,8 @@ pub fn build_wasm(release: bool) -> Result<()> {
     cmd.arg("build")
         .arg("--lib")
         .arg("--target")
-        .arg("wasm32-unknown-unknown");
+        .arg("wasm32-unknown-unknown")
+        .arg("--no-default-features");
 
     if release {
         cmd.arg("--release");

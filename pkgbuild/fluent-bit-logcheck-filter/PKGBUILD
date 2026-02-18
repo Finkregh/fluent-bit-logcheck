@@ -22,7 +22,6 @@ pkgver() {
 prepare() {
   cd "$srcdir/$pkgname"
   export CARGO_TARGET_DIR=target
-  rustc --target wasm32-unknown-unknown --print target-spec-json >/dev/null
   cargo fetch --locked --target wasm32-unknown-unknown --no-default-features
 }
 
