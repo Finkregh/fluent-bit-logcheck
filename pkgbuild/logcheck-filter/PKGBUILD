@@ -23,7 +23,7 @@ prepare() {
   cd "$srcdir/$pkgname"
   export CARGO_TARGET_DIR=target
   rustup default stable
-  rustup target add "$CARCH-unkown-linux-gnu"
+  rustup target add "$CARCH-unknown-linux-gnu"
   #cargo fetch --target "$CARCH-unknown-linux-gnu"
 }
 
