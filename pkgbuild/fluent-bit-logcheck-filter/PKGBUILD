@@ -22,8 +22,8 @@ pkgver() {
 prepare() {
   cd "$srcdir/$pkgname"
   export CARGO_TARGET_DIR=target
-  rustup target addd wasm32-unknown-unknown
-  #cargo fetch --locked --target wasm32-unknown-unknown
+  #rustup target addd wasm32-unknown-unknown
+  cargo fetch --target wasm32-unknown-unknown
 }
 
 build() {
