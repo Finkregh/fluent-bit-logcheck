@@ -49,7 +49,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         if: ${{ !matrix.use-cross }}
         with:
-          targets: ${{ matrix.target }}
+          target: ${{ matrix.target }}
 
       - name: Build CLI natively with xtask
         if: ${{ !matrix.use-cross }}
@@ -96,7 +96,7 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          targets: ${{ matrix.target }}
+          target: ${{ matrix.target }}
 
       - name: Build CLI natively with xtask
         run: cargo xtask build-cli --release
@@ -121,7 +121,7 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          targets: wasm32-unknown-unknown
+          target: wasm32-unknown-unknown
 
       - name: Build WASM filter with xtask
         run: cargo xtask build-wasm --release

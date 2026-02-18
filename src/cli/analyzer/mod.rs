@@ -81,4 +81,11 @@ mod tests {
         assert_eq!(collector.entries()[0], "test entry 1");
         assert_eq!(collector.entries()[1], "test entry 2");
     }
+
+    #[test]
+    fn test_analyze_with_empty_entries() -> Result<()> {
+        let collector = UnmatchedCollector::new();
+        collector.analyze(2)?;
+        Ok(())
+    }
 }

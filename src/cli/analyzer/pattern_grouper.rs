@@ -127,6 +127,7 @@ fn extract_prefix(entry: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use grex::RegExpBuilder;
 
     #[test]
     fn test_extract_prefix() {
@@ -202,6 +203,29 @@ mod tests {
     }
 
     #[test]
+    fn test_group_generation_anchors_and_matches() -> Result<()> {
+        let entries = vec![
+            "app: User alice logged in id=123".to_string(),
+            "app: User bob logged in id=456".to_string(),
+            "app: User charlie logged in id=789".to_string(),
+        ];
+
+        let groups = group_and_generate(&entries, 2)?;
+        assert_eq!(groups.len(), 1);
+
+        let group = &groups[0];
+        assert!(group.regex.contains("[[:digit:]]"));
+        assert!(group.regex.contains("[[:alnum:]_]"));
+
+        let compiled = group.compile()?;
+        for entry in entries {
+            assert!(compiled.is_match(&entry));
+        }
+
+        Ok(())
+    }
+
+    #[test]
     fn test_modern_format_conversion() {
         let group = PatternGroup {
             regex: "^pam_unix\\(sudo:session\\): session [[:alnum:]_]+ for user [[:alnum:]_]+$"
@@ -213,5 +237,47 @@ mod tests {
         let modern = group.modern_format();
         assert!(modern.contains(r"\w+"));
         assert!(!modern.contains("[[:alnum:]_]"));
+    }
+
+    #[test]
+    fn test_grex_output_for_sample_lines() -> Result<()> {
+        let entries = vec![
+            "pam_unix(sudo:session): session opened for user root(uid=0) by root(uid=1000)"
+                .to_string(),
+            "pam_unix(sudo:session): session closed for user root".to_string(),
+        ];
+
+        let groups = group_and_generate(&entries, 2)?;
+        assert_eq!(groups.len(), 1);
+
+        let group = &groups[0];
+        println!("Generated regex: {}", group.regex);
+        Ok(())
+    }
+
+    #[test]
+    fn test_grex_replacements_for_words() {
+        let samples = vec!["opened", "closed", "root"];
+
+        let default_regex = RegExpBuilder::from(&samples).build();
+        println!("grex default: {}", default_regex);
+
+        let no_anchors = RegExpBuilder::from(&samples).without_anchors().build();
+        println!("grex no anchors: {}", no_anchors);
+
+        let words_to_class = RegExpBuilder::from(&samples)
+            .with_conversion_of_words()
+            .build();
+        println!("grex words->\\w: {}", words_to_class);
+
+        let digits_to_class = RegExpBuilder::from(&samples)
+            .with_conversion_of_digits()
+            .build();
+        println!("grex digits->\\d: {}", digits_to_class);
+
+        let repetitions = RegExpBuilder::from(&samples)
+            .with_conversion_of_repetitions()
+            .build();
+        println!("grex repetitions: {}", repetitions);
     }
 }
