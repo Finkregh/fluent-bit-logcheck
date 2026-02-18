@@ -22,7 +22,8 @@ pkgver() {
 prepare() {
   cd "$srcdir/$pkgname"
   export CARGO_TARGET_DIR=target
-  cargo fetch --locked --target wasm32-unknown-unknown
+  rustup target addd wasm32-unknown-unknown
+  #cargo fetch --locked --target wasm32-unknown-unknown
 }
 
 build() {
@@ -31,7 +32,8 @@ build() {
   export RUSTFLAGS="-C target-cpu=generic"
   
   # Use cargo-xtask for building (matches CI workflow)
-  cargo build --release --lib --target wasm32-unknown-unknown --no-default-features
+  cargo xtask build-wasm --release
+  #cargo build --release --lib --target wasm32-unknown-unknown --no-default-features
 }
 
 package() {
