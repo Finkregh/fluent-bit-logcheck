@@ -32,7 +32,7 @@ COPY --from=planner /app/recipe.json recipe.json
 # Cook dependencies for native CLI and WASM target
 # Build sequentially to reduce memory usage
 RUN cargo chef cook --release --recipe-path recipe.json && \
-    cargo chef cook --release --target wasm32-unknown-unknown --recipe-path recipe.json
+    cargo chef cook --release --target wasm32-unknown-unknown --no-default-features --recipe-path recipe.json
 
 # Build both CLI (native) and WASM filter
 COPY . .
