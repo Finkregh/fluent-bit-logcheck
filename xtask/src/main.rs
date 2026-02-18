@@ -77,6 +77,15 @@ enum Commands {
     TestRules,
     /// Generate code coverage report using cargo-tarpaulin
     Coverage,
+    /// Generate regex patterns from log samples
+    GeneratePatterns {
+        /// Path to log file with sample lines
+        #[arg(long)]
+        log_file: String,
+        /// Path to write generated rule
+        #[arg(long)]
+        output: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -97,5 +106,11 @@ fn main() -> Result<()> {
         Commands::Bench { pattern } => tasks::bench::run_benchmarks(pattern.as_deref()),
         Commands::TestRules => tasks::test::test_rules(),
         Commands::Coverage => tasks::test::coverage(),
+        Commands::GeneratePatterns { log_file, output } => {
+            tasks::pattern_gen::generate_patterns_from_logs(
+                std::path::Path::new(&log_file),
+                std::path::Path::new(&output),
+            )
+        }
     }
 }

@@ -16,7 +16,7 @@ const MUSL_TARGETS: &[&str] = &["x86_64-unknown-linux-musl", "aarch64-unknown-li
 const WINDOWS_TARGETS: &[&str] = &["x86_64-pc-windows-msvc"];
 
 /// Detect native target triple
-fn detect_native_target() -> String {
+pub fn detect_native_target() -> String {
     // Use rustc to detect the host triple
     let output = Command::new("rustc")
         .arg("-vV")
@@ -137,7 +137,8 @@ pub fn build_wasm(release: bool) -> Result<()> {
     cmd.arg("build")
         .arg("--lib")
         .arg("--target")
-        .arg("wasm32-unknown-unknown");
+        .arg("wasm32-unknown-unknown")
+        .arg("--no-default-features");
 
     if release {
         cmd.arg("--release");

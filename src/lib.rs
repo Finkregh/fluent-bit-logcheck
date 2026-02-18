@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod regex_conversion;
 pub mod rules;
 
 #[cfg(test)]

@@ -147,6 +147,36 @@ logcheck-filter --rules /etc/logcheck --stats journald --follow --lines 0 | \
     while read line; do echo "$(date): $line"; done
 ```
 
+### Interactive Analyzer (TUI)
+
+Analyze unmatched journald entries and generate regex suggestions:
+
+```bash
+# Launch analyzer with default minimum group size (2)
+logcheck-filter --show unmatched journald analyze
+
+# Require at least 3 similar entries per pattern
+logcheck-filter --show unmatched journald analyze --min-group-size 3
+```
+
+**Key bindings:**
+
+Pattern list
+- ↑/↓ or j/k: Move selection
+- Enter: Open save dialog
+- PgUp/PgDn: Scroll preview
+- q/Esc: Quit analyzer
+
+Save dialog
+- e: Edit regex
+- ←/→: Change category (when not editing)
+- ←/→: Move cursor (when editing)
+- Enter: Save rule
+- Esc: Cancel (or finish editing)
+
+Rules are written to `/etc/logcheck` under the appropriate `ignore.d.*` directory
+as `local-generated` with metadata comments.
+
 ## ⚡ Performance & Monitoring
 
 ### WASM Filter Performance

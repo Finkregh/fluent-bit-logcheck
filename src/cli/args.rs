@@ -2,14 +2,30 @@ use clap::{Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use std::path::PathBuf;
 
+/// Journald-specific modes
+#[cfg(target_os = "linux")]
+#[derive(Subcommand, Clone, Debug)]
+pub enum JournaldMode {
+    /// Launch interactive analyzer for unmatched entries
+    Analyze {
+        /// Minimum group size to propose pattern
+        #[arg(long, default_value = "2", help = "Minimum matches to propose pattern")]
+        min_group_size: usize,
+    },
+}
+
 /// Logcheck-based log filtering tool
 #[derive(Parser)]
 #[command(name = "logcheck-filter")]
 #[command(about = "Filter logs using logcheck rules")]
 #[command(version)]
 pub struct Cli {
-    /// Path to logcheck rules directory
-    #[arg(long, required = true, help = "Path to logcheck rules directory")]
+    /// Path to logcheck rules directory (defaults to /etc/logcheck)
+    #[arg(
+        long,
+        default_value = "/etc/logcheck",
+        help = "Path to logcheck rules directory"
+    )]
     pub rules: PathBuf,
 
     /// Output format
@@ -75,6 +91,9 @@ pub enum InputSource {
         /// Number of lines to show from end
         #[arg(long, help = "Show last N entries")]
         lines: Option<usize>,
+        /// Mode for journald input
+        #[command(subcommand)]
+        mode: Option<JournaldMode>,
     },
 }
 
@@ -109,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_cli_parsing() {
-        // Test basic file input
+        // Test basic file input with explicit rules path
         let args = vec![
             "logcheck-filter",
             "--rules",
@@ -125,6 +144,15 @@ mod tests {
         assert!(!cli.stats);
         assert!(!cli.color);
         assert!(matches!(cli.input, InputSource::File { .. }));
+    }
+
+    #[test]
+    fn test_cli_default_rules() {
+        // Test that rules defaults to /etc/logcheck when not specified
+        let args = vec!["logcheck-filter", "stdin"];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        assert_eq!(cli.rules, PathBuf::from("/etc/logcheck"));
     }
 
     #[test]
@@ -170,11 +198,47 @@ mod tests {
             unit,
             follow,
             lines,
+            mode,
         } = cli.input
         {
             assert_eq!(unit, Some("sshd".to_string()));
             assert!(follow);
             assert_eq!(lines, Some(100));
+            assert!(mode.is_none());
+        } else {
+            panic!("Expected Journald input source");
+        }
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn test_journald_analyze_mode() {
+        let args = vec![
+            "logcheck-filter",
+            "journald",
+            "analyze",
+            "--min-group-size",
+            "5",
+        ];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        if let InputSource::Journald {
+            unit,
+            follow,
+            lines,
+            mode,
+        } = cli.input
+        {
+            assert_eq!(unit, None);
+            assert!(!follow);
+            assert_eq!(lines, None);
+            assert!(mode.is_some());
+
+            if let Some(JournaldMode::Analyze { min_group_size }) = mode {
+                assert_eq!(min_group_size, 5);
+            } else {
+                panic!("Expected Analyze mode");
+            }
         } else {
             panic!("Expected Journald input source");
         }

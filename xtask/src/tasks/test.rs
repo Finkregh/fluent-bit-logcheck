@@ -157,11 +157,13 @@ pub fn test_msgpack() -> Result<()> {
 pub fn test_rules() -> Result<()> {
     println!("🧪 Running logcheck rules tests...");
 
+    let target = crate::tasks::build::detect_native_target();
+    println!("🔎 Using target for tests: {}", target);
     let status = Command::new("cargo")
         .arg("test")
         .arg("--lib")
         .arg("--target")
-        .arg("x86_64-unknown-linux-gnu")
+        .arg(&target)
         .status()?;
 
     if !status.success() {
@@ -172,35 +174,73 @@ pub fn test_rules() -> Result<()> {
     Ok(())
 }
 
-/// Run code coverage with tarpaulin
+/// Run code coverage with tarpaulin (Linux) or llvm-cov fallback (non-Linux)
 pub fn coverage() -> Result<()> {
     println!("📊 Running code coverage analysis...");
 
-    let status = Command::new("cargo")
-        .arg("tarpaulin")
-        .arg("--target")
-        .arg("x86_64-unknown-linux-gnu")
-        .arg("--workspace")
-        .arg("--timeout")
-        .arg("300")
-        .arg("--out")
-        .arg("xml")
-        .arg("--out")
-        .arg("lcov")
-        .arg("--output-dir")
-        .arg("target/coverage/")
-        .arg("--exclude-files")
-        .arg("target/*")
-        .arg("--exclude-files")
-        .arg("build.rs")
-        .arg("--all-features")
-        .status()?;
+    let target = crate::tasks::build::detect_native_target();
 
-    if !status.success() {
-        anyhow::bail!("Code coverage analysis failed");
+    if target.contains("linux") {
+        println!("🔎 Using target for coverage: {}", target);
+        let status = Command::new("cargo")
+            .arg("tarpaulin")
+            .arg("--target")
+            .arg(&target)
+            .arg("--workspace")
+            .arg("--timeout")
+            .arg("300")
+            .arg("--out")
+            .arg("xml")
+            .arg("--out")
+            .arg("lcov")
+            .arg("--output-dir")
+            .arg("target/coverage/")
+            .arg("--exclude-files")
+            .arg("target/*")
+            .arg("--exclude-files")
+            .arg("build.rs")
+            .arg("--all-features")
+            .status()?;
+
+        if !status.success() {
+            anyhow::bail!("Code coverage analysis failed");
+        }
+
+        println!("✅ Code coverage analysis completed");
+        println!("   Reports available in target/coverage/");
+        return Ok(());
+    } else {
+        println!(
+            "ℹ️ Non-Linux host detected ({}). Attempting cargo-llvm-cov fallback...",
+            target
+        );
+        // Try cargo-llvm-cov as a cross-platform fallback
+        let has_llvm_cov = Command::new("cargo")
+            .arg("llvm-cov")
+            .arg("--version")
+            .output()
+            .is_ok();
+        if has_llvm_cov {
+            let _ = std::fs::create_dir_all("target/coverage/");
+            let status = Command::new("cargo")
+                .arg("llvm-cov")
+                .arg("--workspace")
+                .arg("--all-features")
+                .arg("--lcov")
+                .arg("--output-path")
+                .arg("target/coverage/lcov.info")
+                .status()?;
+            if !status.success() {
+                anyhow::bail!("cargo-llvm-cov coverage failed");
+            }
+            println!("✅ llvm-cov coverage completed (LCOV only)");
+            println!("   LCOV report at target/coverage/lcov.info");
+            println!("   Note: Cobertura XML not generated on non-Linux hosts by xtask.");
+            return Ok(());
+        } else {
+            anyhow::bail!(
+                "cargo-tarpaulin supports Linux only. Run coverage on a Linux host or install cargo-llvm-cov for a local fallback.\n- Linux: cargo xtask coverage\n- macOS/Windows: cargo install cargo-llvm-cov && cargo xtask coverage"
+            );
+        }
     }
-
-    println!("✅ Code coverage analysis completed");
-    println!("   Reports available in target/coverage/");
-    Ok(())
 }

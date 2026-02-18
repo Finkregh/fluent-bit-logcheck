@@ -1,36 +1,44 @@
 # Maintainer: Your Name <your.email@example.com>
 
 pkgname=fluent-bit-logcheck-filter
-pkgver=0.1.0
+pkgver=r1.HEAD
 pkgrel=1
 pkgdesc="Fluent-Bit WASM filter for filtering logs using logcheck rules"
 arch=('any')
 url="https://github.com/finkregh/fluent-bit-logcheck"
 license=('Apache-2.0' 'MIT')
-depends=('fluent-bit')
-makedepends=('cargo' 'rust')
-source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+#depends=('fluent-bit')
+makedepends=('cargo' 'rustup' 'git')
+optdepends=('logcheck-database: Debian logcheck rule database' 'fluent-bit: to use this plugin')
+source=("$pkgname::git+$url.git")
 b2sums=('SKIP')
 options=('!lto')
 
+pkgver() {
+  cd "$srcdir/$pkgname"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
 prepare() {
-  cd "$srcdir/fluent-bit-logcheck-$pkgver"
-  export RUSTUP_TOOLCHAIN=stable
+  cd "$srcdir/$pkgname"
+  export CARGO_TARGET_DIR=target
+  rustup default stable
   rustup target add wasm32-unknown-unknown
-  cargo fetch --locked --target wasm32-unknown-unknown
+  #cargo fetch --target wasm32-unknown-unknown
 }
 
 build() {
-  cd "$srcdir/fluent-bit-logcheck-$pkgver"
-  export RUSTUP_TOOLCHAIN=stable
+  cd "$srcdir/$pkgname"
   export CARGO_TARGET_DIR=target
+  export RUSTFLAGS="-C target-cpu=generic"
   
   # Use cargo-xtask for building (matches CI workflow)
   cargo xtask build-wasm --release
+  #cargo build --release --lib --target wasm32-unknown-unknown --no-default-features
 }
 
 package() {
-  cd "$srcdir/fluent-bit-logcheck-$pkgver"
+  cd "$srcdir/$pkgname"
   
   # Install WASM filter
   install -Dm644 \
@@ -40,8 +48,6 @@ package() {
   # Install documentation
   install -Dm644 "README.md" \
     "$pkgdir/usr/share/doc/$pkgname/README.md"
-  install -Dm644 "LOGCHECK-INTEGRATION.md" \
-    "$pkgdir/usr/share/doc/$pkgname/LOGCHECK-INTEGRATION.md"
   
   # Install examples
   install -Dm644 "example-fluent-bit.conf" \

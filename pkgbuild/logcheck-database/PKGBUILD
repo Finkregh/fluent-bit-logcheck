@@ -1,0 +1,38 @@
+# Maintainer: Your Name <your.email@example.com>
+
+pkgname=logcheck-database
+pkgver=1.4.7
+pkgrel=1
+pkgdesc="Database of system log rules for logcheck (repackaged from Debian)"
+arch=('any')
+url="https://packages.debian.org/testing/logcheck-database"
+license=('GPL')
+depends=()
+optdepends=('logcheck-filter: CLI tool for filtering logs using logcheck rules'
+           'fluent-bit-logcheck-filter: Fluent-Bit WASM filter using logcheck rules')
+conflicts=('logcheck-database')
+source=("http://deb.debian.org/debian/pool/main/l/logcheck/logcheck-database_${pkgver}_all.deb")
+sha256sums=('SKIP')  # TODO: Add actual checksum
+
+package() {
+  cd "$srcdir"
+  
+  # Extract the .deb file
+  ar x "logcheck-database_${pkgver}_all.deb"
+  tar -xf data.tar.xz -C "$pkgdir"
+  
+  # Fix permissions (common issue with extracted .deb files)
+  chmod -R 755 "$pkgdir"
+  
+  # The Debian package installs rules to /etc/logcheck/
+  # This is the standard location that logcheck tools expect
+  
+  # Install documentation from the package
+  if [ -f "$pkgdir/usr/share/doc/logcheck-database/README.logcheck-database.gz" ]; then
+    gunzip "$pkgdir/usr/share/doc/logcheck-database/README.logcheck-database.gz"
+  fi
+  
+  # Install package license
+  install -Dm644 "$pkgdir/usr/share/doc/logcheck-database/copyright" \
+    "$pkgdir/usr/share/licenses/$pkgname/copyright"
+}

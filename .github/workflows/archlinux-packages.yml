@@ -1,0 +1,288 @@
+name: Build Arch Linux Packages
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-logcheck-filter-pkg:
+    name: Build logcheck-filter Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Update PKGBUILD source reference
+        run: |
+          # Determine the git reference (branch or tag)
+          case "$GITHUB_REF" in
+            refs/tags/*)
+              # Extract tag name
+              GIT_REF="$GITHUB_REF_NAME"
+              REF_TYPE="tag"
+              ;;
+            refs/heads/*)
+              # Extract branch name
+              GIT_REF="$GITHUB_REF_NAME"
+              REF_TYPE="branch"
+              ;;
+            *)
+              # Fallback for PRs - use the head ref
+              GIT_REF="$GITHUB_HEAD_REF"
+              REF_TYPE="branch"
+              ;;
+          esac
+
+          echo "Git reference: $GIT_REF (type: $REF_TYPE)"
+
+          # Only update if not on main branch
+          if [[ "$GIT_REF" != "main" ]]; then
+            echo "Updating PKGBUILD source reference to use $REF_TYPE=$GIT_REF"
+            
+            # Update the source line in PKGBUILD
+            sed -i "s|source=(\"\$pkgname::git+\$url.git\")|source=(\"\$pkgname::git+\$url.git#${REF_TYPE}=${GIT_REF}\")|g" \
+              pkgbuild/logcheck-filter/PKGBUILD
+            
+            echo "Updated PKGBUILD:"
+            grep "^source=" pkgbuild/logcheck-filter/PKGBUILD
+          else
+            echo "On main branch, keeping default source reference"
+          fi
+
+      - name: Build logcheck-filter package
+        uses: ouuan/pkgbuild-action@master
+        id: build-logcheck-filter
+        with:
+          path: pkgbuild/logcheck-filter
+
+      - name: Namcap built logcheck-filter package
+        if: github.event_name == 'pull_request'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            archlinux:latest \
+            bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-logcheck-filter.outputs.pkgfile }}"
+
+      - name: Upload logcheck-filter package
+        uses: actions/upload-artifact@v4
+        with:
+          name: logcheck-filter-pkg-${{ github.run_id }}
+          path: ${{ steps.build-logcheck-filter.outputs.pkgfile }}
+          retention-days: 30
+
+  build-fluent-bit-filter-pkg:
+    name: Build fluent-bit-logcheck-filter Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Update PKGBUILD source reference
+        run: |
+          # Determine the git reference (branch or tag)
+          case "$GITHUB_REF" in
+            refs/tags/*)
+              # Extract tag name
+              GIT_REF="$GITHUB_REF_NAME"
+              REF_TYPE="tag"
+              ;;
+            refs/heads/*)
+              # Extract branch name
+              GIT_REF="$GITHUB_REF_NAME"
+              REF_TYPE="branch"
+              ;;
+            *)
+              # Fallback for PRs - use the head ref
+              GIT_REF="$GITHUB_HEAD_REF"
+              REF_TYPE="branch"
+              ;;
+          esac
+
+          echo "Git reference: $GIT_REF (type: $REF_TYPE)"
+
+          # Only update if not on main branch
+          if [[ "$GIT_REF" != "main" ]]; then
+            echo "Updating PKGBUILD source reference to use $REF_TYPE=$GIT_REF"
+            
+            # Update the source line in PKGBUILD
+            sed -i "s|source=(\"\$pkgname::git+\$url.git\")|source=(\"\$pkgname::git+\$url.git#${REF_TYPE}=${GIT_REF}\")|g" \
+              pkgbuild/fluent-bit-logcheck-filter/PKGBUILD
+            
+            echo "Updated PKGBUILD:"
+            grep "^source=" pkgbuild/fluent-bit-logcheck-filter/PKGBUILD
+          else
+            echo "On main branch, keeping default source reference"
+          fi
+
+      - name: Build fluent-bit-logcheck-filter package
+        uses: ouuan/pkgbuild-action@master
+        id: build-fluent-bit-filter
+        with:
+          path: pkgbuild/fluent-bit-logcheck-filter
+
+      - name: Namcap built fluent-bit-logcheck-filter package
+        if: github.event_name == 'pull_request'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            archlinux:latest \
+            bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-fluent-bit-filter.outputs.pkgfile }}"
+
+      - name: Upload fluent-bit-logcheck-filter package
+        uses: actions/upload-artifact@v4
+        with:
+          name: fluent-bit-logcheck-filter-pkg-${{ github.run_id }}
+          path: ${{ steps.build-fluent-bit-filter.outputs.pkgfile }}
+          retention-days: 30
+
+  build-logcheck-database-pkg:
+    name: Build logcheck-database Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build logcheck-database package
+        uses: ouuan/pkgbuild-action@master
+        id: build-logcheck-database
+        with:
+          path: pkgbuild/logcheck-database
+
+      - name: Namcap built logcheck-database package
+        if: github.event_name == 'pull_request'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            archlinux:latest \
+            bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-logcheck-database.outputs.pkgfile }}"
+
+      - name: Upload logcheck-database package
+        uses: actions/upload-artifact@v4
+        with:
+          name: logcheck-database-pkg-${{ github.run_id }}
+          path: ${{ steps.build-logcheck-database.outputs.pkgfile }}
+          retention-days: 30
+
+  package-summary:
+    name: Package Build Summary
+    runs-on: ubuntu-latest
+    needs:
+      [
+        build-logcheck-filter-pkg,
+        build-fluent-bit-filter-pkg,
+        build-logcheck-database-pkg,
+      ]
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write # Required for PR comments
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate package summary
+        run: |
+          {
+            echo "# 📦 Arch Linux Package Build Summary"
+            echo ""
+            echo "Build completed for commit \`${{ github.sha }}\`"
+            echo ""
+            echo "## Package Status"
+            echo ""
+
+            # Check job statuses
+            if [[ "${{ needs.build-logcheck-filter-pkg.result }}" == "success" ]]; then
+              echo "✅ **logcheck-filter**: Built successfully"
+            else
+              echo "❌ **logcheck-filter**: Build failed"
+            fi
+
+            if [[ "${{ needs.build-fluent-bit-filter-pkg.result }}" == "success" ]]; then
+              echo "✅ **fluent-bit-logcheck-filter**: Built successfully"
+            else
+              echo "❌ **fluent-bit-logcheck-filter**: Build failed"
+            fi
+
+            if [[ "${{ needs.build-logcheck-database-pkg.result }}" == "success" ]]; then
+              echo "✅ **logcheck-database**: Built successfully"
+            else
+              echo "❌ **logcheck-database**: Build failed"
+            fi
+
+            echo ""
+            echo "## Installation"
+            echo ""
+            echo "Download the built packages from the workflow artifacts and install with:"
+            echo ""
+            echo '```bash'
+            echo "# Install all packages"
+            echo "sudo pacman -U logcheck-filter-*.pkg.tar.zst \\" 
+            echo "               fluent-bit-logcheck-filter-*.pkg.tar.zst \\" 
+            echo "               logcheck-database-*.pkg.tar.zst"
+            echo ""
+            echo "# Or install individually as needed"
+            echo "sudo pacman -U logcheck-filter-*.pkg.tar.zst"
+            echo '```'
+            echo ""
+            echo "---"
+            echo "*Generated on $(date)*"
+          } > package-summary.md
+
+      - name: Comment PR with package summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+
+            try {
+              const summary = fs.readFileSync('package-summary.md', 'utf8');
+              
+              // Look for existing comment to update instead of creating new ones
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              const botComment = comments.data.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('📦 Arch Linux Package Build Summary')
+              );
+              
+              if (botComment) {
+                // Update existing comment
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: summary
+                });
+                console.log('Updated existing package build summary comment');
+              } else {
+                // Create new comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: summary
+                });
+                console.log('Created new package build summary comment');
+              }
+            } catch (error) {
+              console.error('Error posting package summary:', error);
+              // Don't fail the job if comment posting fails
+              core.warning('Failed to post PR comment, but package builds completed');
+            }
+
+      - name: Archive package summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-build-summary
+          path: package-summary.md
+          retention-days: 30

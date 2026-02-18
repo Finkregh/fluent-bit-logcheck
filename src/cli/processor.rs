@@ -1,3 +1,4 @@
+use crate::cli::analyzer::UnmatchedCollector;
 use crate::cli::input::LogInput;
 use crate::cli::output::{FilteredEntry, LogOutput};
 use crate::cli::Result;
@@ -29,10 +30,21 @@ impl LogProcessor {
     }
 
     /// Process log entries from input and write filtered results to output
+    /// Optionally collect unmatched entries for analysis
     pub fn process(
         &self,
         input: &mut dyn LogInput,
         output: &mut dyn LogOutput,
+    ) -> Result<ProcessingStats> {
+        self.process_with_collector(input, output, None)
+    }
+
+    /// Process log entries with optional unmatched entry collection
+    pub fn process_with_collector(
+        &self,
+        input: &mut dyn LogInput,
+        output: &mut dyn LogOutput,
+        mut collector: Option<&mut UnmatchedCollector>,
     ) -> Result<ProcessingStats> {
         let mut stats = ProcessingStats::default();
 
@@ -49,6 +61,11 @@ impl LogProcessor {
                 *stats.by_category.entry(cat.clone()).or_insert(0) += 1;
             } else {
                 stats.unmatched += 1;
+
+                // Collect unmatched entry if collector is provided
+                if let Some(ref mut collector) = collector {
+                    collector.add_entry(message.clone());
+                }
             }
 
             // Create filtered entry and write to output

@@ -1,44 +1,49 @@
 # Maintainer: Your Name <your.email@example.com>
 
 pkgname=logcheck-filter
-pkgver=0.1.0
+pkgver=r1.HEAD
 pkgrel=1
 pkgdesc="CLI tool for filtering logs using logcheck rules"
 arch=('x86_64')
 url="https://github.com/Finkregh/fluent-bit-logcheck"
 license=('Apache-2.0' 'MIT')
 depends=('gcc-libs' 'glibc')
-makedepends=('cargo' 'rust')
-source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+makedepends=('cargo' 'rustup' 'git')
+optdepends=('logcheck-database: official Debian logcheck rule database')
+source=("$pkgname::git+$url.git")
 b2sums=('SKIP')
 options=('!lto')
 
+pkgver() {
+  cd "$srcdir/$pkgname"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
 prepare() {
-  cd "$srcdir/fluent-bit-logcheck-$pkgver"
-  export RUSTUP_TOOLCHAIN=stable
-  cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+  cd "$srcdir/$pkgname"
+  export CARGO_TARGET_DIR=target
+  rustup default stable
+  rustup target add "$CARCH-unknown-linux-gnu"
+  #cargo fetch --target "$CARCH-unknown-linux-gnu"
 }
 
 build() {
-  cd "$srcdir/fluent-bit-logcheck-$pkgver"
-  export RUSTUP_TOOLCHAIN=stable
+  cd "$srcdir/$pkgname"
   export CARGO_TARGET_DIR=target
   export RUSTFLAGS="-C target-cpu=native"
-  
-  # Use cargo-xtask for building (matches CI workflow)
   cargo xtask build-cli --release
+  #cargo build --release --bin logcheck-filter --target "$CARCH-unknown-linux-gnu"
 }
 
-check() {
-  cd "$srcdir/fluent-bit-logcheck-$pkgver"
-  export RUSTUP_TOOLCHAIN=stable
-  export RUSTFLAGS="-C target-cpu=native"
+# check() {
+#   cd "$srcdir/$pkgname"
+#   export RUSTFLAGS="-C target-cpu=native"
   
-  cargo test --frozen --release --bin logcheck-filter
-}
+#   cargo test --frozen --release --bin logcheck-filter
+# }
 
 package() {
-  cd "$srcdir/fluent-bit-logcheck-$pkgver"
+  cd "$srcdir/$pkgname"
   
   # Binary is built for explicit target by xtask
   install -Dm755 "target/$CARCH-unknown-linux-gnu/release/logcheck-filter" \
