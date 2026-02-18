@@ -40,7 +40,7 @@ RUN cargo build --release --bin logcheck-filter && \
     cargo build --release --target wasm32-unknown-unknown --lib --no-default-features
 
 # Final runtime image with Fluent Bit
-FROM fluent/fluent-bit:4.2.2
+FROM fluent/fluent-bit:4.2.3
 
 # Copy WASM filter (architecture-independent)
 COPY --from=builder /app/target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm /fluent-bit/filters/
