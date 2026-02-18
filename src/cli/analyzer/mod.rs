@@ -4,6 +4,7 @@
 /// for unmatched log entries via a TUI interface.
 pub mod pattern_grouper;
 pub mod rule_writer;
+#[cfg(feature = "tui")]
 pub mod tui;
 
 use crate::cli::Result;
@@ -57,7 +58,17 @@ impl UnmatchedCollector {
         }
 
         // Launch TUI
-        tui::run_analyzer(pattern_groups, self.entries())?;
+        #[cfg(feature = "tui")]
+        {
+            tui::run_analyzer(pattern_groups, self.entries())?;
+        }
+
+        #[cfg(not(feature = "tui"))]
+        {
+            anyhow::bail!(
+                "TUI support is disabled; build with --features tui to enable analyzer UI"
+            );
+        }
 
         Ok(())
     }

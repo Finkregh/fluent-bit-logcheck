@@ -57,8 +57,8 @@ thiserror = "2"
 colored = "3"
 
 # TUI dependencies (for analyzer mode)
-ratatui = "0.28"
-crossterm = "0.28"
+ratatui = { version = "0.28", optional = true }
+crossterm = { version = "0.28", optional = true }
 
 # Regex generation from examples
 grex = "1.4"
@@ -77,6 +77,10 @@ journald-export-parser-rs = "0.1.0"
 
 [dev-dependencies]
 tempfile = "3.25"
+
+[features]
+default = ["tui"]
+tui = ["ratatui", "crossterm"]
 
 [profile.release]
 opt-level = 3

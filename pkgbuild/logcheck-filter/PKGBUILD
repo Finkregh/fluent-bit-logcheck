@@ -21,23 +21,20 @@ pkgver() {
 
 prepare() {
   cd "$srcdir/$pkgname"
-  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
   cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
 }
 
 build() {
   cd "$srcdir/$pkgname"
-  export RUSTUP_TOOLCHAIN=stable
   export CARGO_TARGET_DIR=target
   export RUSTFLAGS="-C target-cpu=native"
   
-  # Use cargo-xtask for building (matches CI workflow)
-  cargo xtask build-cli --release
+  cargo build --release --bin logcheck-filter --target "$CARCH-unknown-linux-gnu"
 }
 
 # check() {
 #   cd "$srcdir/$pkgname"
-#   export RUSTUP_TOOLCHAIN=stable
 #   export RUSTFLAGS="-C target-cpu=native"
   
 #   cargo test --frozen --release --bin logcheck-filter

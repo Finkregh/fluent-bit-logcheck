@@ -2,7 +2,7 @@
 # Multi-stage build for logcheck-fluent-bit-filter using cargo-chef for optimal caching
 # Builds for native architecture only (linux/amd64 on GitHub Actions CI)
 
-ARG RUST_VERSION=1.85
+ARG RUST_VERSION=1.88
 FROM rust:${RUST_VERSION}-slim AS chef
 
 # Install system dependencies
@@ -37,7 +37,7 @@ RUN cargo chef cook --release --recipe-path recipe.json && \
 # Build both CLI (native) and WASM filter
 COPY . .
 RUN cargo build --release --bin logcheck-filter && \
-    cargo build --release --target wasm32-unknown-unknown --lib
+    cargo build --release --target wasm32-unknown-unknown --lib --no-default-features
 
 # Final runtime image with Fluent Bit
 FROM fluent/fluent-bit:4.2.2
