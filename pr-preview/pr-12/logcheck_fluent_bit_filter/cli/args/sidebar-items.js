@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["InputSource","JournaldMode","OutputFormat","ShowMode"],"struct":["Cli"]};
