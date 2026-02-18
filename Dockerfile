@@ -2,8 +2,8 @@
 # Multi-stage build for logcheck-fluent-bit-filter using cargo-chef for optimal caching
 # Builds for native architecture only (linux/amd64 on GitHub Actions CI)
 
-ARG RUST_VERSION=1.88
-FROM rust:${RUST_VERSION}-slim AS chef
+#ARG RUST_VERSION=1.88
+FROM rust:1.93.1-slim AS chef
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
