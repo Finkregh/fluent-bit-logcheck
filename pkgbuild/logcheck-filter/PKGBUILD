@@ -1,7 +1,7 @@
 # Maintainer: Your Name <your.email@example.com>
 
 pkgname=logcheck-filter
-pkgver=r1.HEAD
+pkgver=0.1.0
 pkgrel=1
 pkgdesc="CLI tool for filtering logs using logcheck rules"
 arch=('x86_64')
