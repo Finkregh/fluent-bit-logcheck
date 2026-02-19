@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+pacman -Sy --noconfirm base-devel git jq
+
 if ! command -v jq >/dev/null 2>&1; then
     echo "jq is required to parse release-plz output" >&2
     exit 1
@@ -26,6 +28,8 @@ fi
 update_pkgbuild() {
     local pkgbuild_dir="$1"
     local version="$2"
+    local build_user="${BUILD_USER:-builduser}"
+    local build_uid="${BUILD_UID:-1000}"
 
     if [ ! -f "$pkgbuild_dir/PKGBUILD" ]; then
         return 0
@@ -34,7 +38,14 @@ update_pkgbuild() {
     echo "Updating $pkgbuild_dir to version $version"
     sed -i "s/^pkgver=.*/pkgver=${version}/" "$pkgbuild_dir/PKGBUILD"
 
-    (cd "$pkgbuild_dir" && makepkg --printsrcinfo >.SRCINFO)
+    if ! id -u "$build_user" >/dev/null 2>&1; then
+        useradd --create-home --shell /bin/bash --uid "$build_uid" "$build_user"
+    fi
+
+    touch "$pkgbuild_dir/.SRCINFO"
+    chown -R "$build_user":"$build_user" "$pkgbuild_dir"
+
+    su -s /bin/bash "$build_user" -c "cd '$pkgbuild_dir' && makepkg --printsrcinfo > .SRCINFO"
 }
 
 mapfile -t releases < <(jq -c '.releases[]?' "$pr_json")

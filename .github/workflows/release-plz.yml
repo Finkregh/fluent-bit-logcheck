@@ -70,7 +70,7 @@ jobs:
             -v /tmp/release-plz-pr.json:/tmp/release-plz-pr.json \
             -w /workspace \
             archlinux:latest \
-            bash -lc "pacman -Sy --noconfirm base-devel git jq && ./scripts/update-pkgbuild-version.sh /tmp/release-plz-pr.json"
+            bash -lc "./scripts/update-pkgbuild-version.sh /tmp/release-plz-pr.json"
 
       - name: Commit PKGBUILD updates
         run: |
