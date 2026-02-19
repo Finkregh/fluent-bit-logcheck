@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      version_override:
+        description: "Override version (e.g. 1.2.3 or crate@1.2.3)"
+        required: false
+        type: string
 
 jobs:
   release-plz-pr:
@@ -23,6 +29,14 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install release-plz CLI
+        if: ${{ inputs.version_override }}
+        run: cargo install release-plz --locked
+
+      - name: Set manual version
+        if: ${{ inputs.version_override }}
+        run: release-plz set-version ${{ inputs.version_override }}
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
