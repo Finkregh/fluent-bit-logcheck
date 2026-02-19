@@ -34,12 +34,30 @@ jobs:
         if: ${{ inputs.version_override }}
         run: cargo install release-plz --locked
 
-      - name: Set manual version
-        if: ${{ inputs.version_override }}
-        run: release-plz set-version ${{ inputs.version_override }}
-
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Set manual version
+        if: ${{ inputs.version_override }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version_override }}"
+          # If the input already specifies package-qualified or multiple versions, pass through
+          if [[ "$VERSION" == *"@"* || "$VERSION" == *" "* ]]; then
+            echo "Using provided version spec: $VERSION"
+            release-plz set-version "$VERSION"
+          else
+            echo "Expanding single version to all workspace packages via cargo metadata"
+            # Get workspace package names (no dependencies)
+            PACKAGES=$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[].name')
+            # Build arguments: <package>@<version> for each package
+            ARGS=""
+            for pkg in $PACKAGES; do
+              ARGS="$ARGS $pkg@$VERSION"
+            done
+            echo "Setting versions for: $ARGS"
+            release-plz set-version $ARGS
+          fi
 
       - name: Run release-plz (release PR)
         id: release-plz
