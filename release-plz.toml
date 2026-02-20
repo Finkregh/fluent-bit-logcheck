@@ -1,6 +1,6 @@
 [workspace]
 changelog_update = true
-dependencies_update = true
+dependencies_update = false
 git_release_enable = true
 semver_check = true
 pr_branch_prefix = "release-plz-"
