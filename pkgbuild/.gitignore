@@ -1,0 +1,10 @@
+logcheck-filter-git/PKGBUILD
+logcheck-filter-bin/PKGBUILD
+fluent-bit-logcheck-filter-git/PKGBUILD
+fluent-bit-logcheck-filter-bin/PKGBUILD
+logcheck-database/PKGBUILD
+logcheck-filter-git/.SRCINFO
+logcheck-filter-bin/.SRCINFO
+fluent-bit-logcheck-filter-git/.SRCINFO
+fluent-bit-logcheck-filter-bin/.SRCINFO
+logcheck-database/.SRCINFO

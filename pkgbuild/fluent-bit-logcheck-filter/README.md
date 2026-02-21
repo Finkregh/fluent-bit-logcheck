@@ -1,4 +1,4 @@
-# fluent-bit-logcheck-filter - Arch Linux Package
+# fluent-bit-logcheck-filter - Arch Linux Package (templates)
 
 This package provides a Fluent-Bit WASM filter for filtering logs using logcheck rules.
 

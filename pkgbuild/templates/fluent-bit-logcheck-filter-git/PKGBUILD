@@ -1,61 +1,56 @@
 # Maintainer: Your Name <your.email@example.com>
 
-pkgname=fluent-bit-logcheck-filter
-pkgver=0.0.3
+pkgname=fluent-bit-logcheck-filter-git
+_pkgname=fluent-bit-logcheck-filter
+pkgver=0.0.0.r0.g0000000
 pkgrel=1
-pkgdesc="Fluent-Bit WASM filter for filtering logs using logcheck rules"
+pkgdesc="Fluent-Bit WASM filter for filtering logs using logcheck rules (git)"
 arch=('any')
-url="https://github.com/finkregh/fluent-bit-logcheck"
+url="https://github.com/Finkregh/fluent-bit-logcheck"
 license=('Apache-2.0' 'MIT')
-#depends=('fluent-bit')
 makedepends=('cargo' 'rustup' 'git')
 optdepends=('logcheck-database: Debian logcheck rule database' 'fluent-bit: to use this plugin')
-source=("$pkgname::git+$url.git")
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
+source=("${_pkgname}::git+${url}.git")
 b2sums=('SKIP')
 options=('!lto')
 
 pkgver() {
-  cd "$srcdir/$pkgname"
-  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+  cd "$srcdir/${_pkgname}"
+  git describe --long --tags \
+    | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 }
 
 prepare() {
-  cd "$srcdir/$pkgname"
+  cd "$srcdir/${_pkgname}"
   export CARGO_TARGET_DIR=target
   rustup default stable
   rustup target add wasm32-unknown-unknown
-  #cargo fetch --target wasm32-unknown-unknown
 }
 
 build() {
-  cd "$srcdir/$pkgname"
+  cd "$srcdir/${_pkgname}"
   export CARGO_TARGET_DIR=target
   export RUSTFLAGS="-C target-cpu=generic"
-  
-  # Use cargo-xtask for building (matches CI workflow)
   cargo xtask build-wasm --release
-  #cargo build --release --lib --target wasm32-unknown-unknown --no-default-features
 }
 
 package() {
-  cd "$srcdir/$pkgname"
-  
-  # Install WASM filter
+  cd "$srcdir/${_pkgname}"
+
   install -Dm644 \
     "target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm" \
     "$pkgdir/usr/lib/fluent-bit/filters/logcheck_filter.wasm"
-  
-  # Install documentation
+
   install -Dm644 "README.md" \
     "$pkgdir/usr/share/doc/$pkgname/README.md"
-  
-  # Install examples
+
   install -Dm644 "example-fluent-bit.conf" \
     "$pkgdir/usr/share/doc/$pkgname/examples/example-fluent-bit.conf"
   install -Dm644 "sample-systemd-rules.txt" \
     "$pkgdir/usr/share/doc/$pkgname/examples/sample-systemd-rules.txt"
-  
-  # Install license
+
   install -Dm644 "LICENSE.md" \
     "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

@@ -1,0 +1,17 @@
+name: Arch Linux Docker Runner
+description: Run a command inside an archlinux container
+inputs:
+  command:
+    description: Command to execute inside container
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Run in Arch Linux container
+      shell: bash
+      run: |
+        docker run --rm \
+          -v "${{ github.workspace }}:/workspace" \
+          -w /workspace \
+          archlinux:latest \
+          bash -lc "${{ inputs.command }}"

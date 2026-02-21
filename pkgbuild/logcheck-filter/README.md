@@ -1,6 +1,6 @@
-# logcheck-filter - Arch Linux Package
+# logcheck-filter - Arch Linux Package (templates)
 
-This package provides the `logcheck-filter` CLI tool for filtering logs using logcheck rules.
+This directory contains templates for packaging the `logcheck-filter` CLI tool.
 
 ## Building
 
@@ -36,7 +36,7 @@ See `man logcheck-filter` for full documentation.
 
 ## Notes
 
-- This package is optimized with `target-cpu=native` for maximum performance on your system
+- The `-git` variant is optimized with `target-cpu=native` for maximum performance on your system
 - The binary may not work on systems with older CPUs than the build system
 - For a portable build, remove the `RUSTFLAGS` line from PKGBUILD
 

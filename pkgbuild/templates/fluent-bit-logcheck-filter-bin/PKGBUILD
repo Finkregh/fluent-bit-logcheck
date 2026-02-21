@@ -1,0 +1,38 @@
+# Maintainer: Your Name <your.email@example.com>
+
+pkgname=fluent-bit-logcheck-filter-bin
+_pkgname=fluent-bit-logcheck-filter
+_srcname=fluent-bit-logcheck
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Fluent-Bit WASM filter for filtering logs using logcheck rules (binary release)"
+arch=('any')
+url="https://github.com/Finkregh/fluent-bit-logcheck"
+license=('Apache-2.0' 'MIT')
+optdepends=('logcheck-database: Debian logcheck rule database' 'fluent-bit: to use this plugin')
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
+
+source=("${_srcname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz"
+        "fluentbit-wasm-filter.tar.gz::${url}/releases/download/v${pkgver}/fluentbit-wasm-filter.tar.gz")
+sha256sums=('REPLACE_ME'
+            'REPLACE_ME')
+
+package() {
+  cd "$srcdir"
+  tar -xzf fluentbit-wasm-filter.tar.gz
+
+  install -Dm644 "logcheck_fluent_bit_filter.wasm" \
+    "$pkgdir/usr/lib/fluent-bit/filters/logcheck_filter.wasm"
+
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/README.md" \
+    "$pkgdir/usr/share/doc/$pkgname/README.md"
+
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/example-fluent-bit.conf" \
+    "$pkgdir/usr/share/doc/$pkgname/examples/example-fluent-bit.conf"
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/sample-systemd-rules.txt" \
+    "$pkgdir/usr/share/doc/$pkgname/examples/sample-systemd-rules.txt"
+
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/LICENSE.md" \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

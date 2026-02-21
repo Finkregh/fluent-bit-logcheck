@@ -1,0 +1,48 @@
+# Maintainer: Your Name <your.email@example.com>
+
+pkgname=logcheck-filter-bin
+_pkgname=logcheck-filter
+_srcname=fluent-bit-logcheck
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="CLI tool for filtering logs using logcheck rules (binary release)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/Finkregh/fluent-bit-logcheck"
+license=('Apache-2.0' 'MIT')
+depends=('gcc-libs' 'glibc')
+optdepends=('logcheck-database: official Debian logcheck rule database')
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
+options=('!strip')
+
+source=("${_srcname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz")
+source_x86_64=("${_pkgname}-linux-amd64.tar.gz::${url}/releases/download/v${pkgver}/${_pkgname}-linux-amd64.tar.gz")
+source_aarch64=("${_pkgname}-linux-arm64.tar.gz::${url}/releases/download/v${pkgver}/${_pkgname}-linux-arm64.tar.gz")
+sha256sums=('REPLACE_ME')
+sha256sums_x86_64=('REPLACE_ME')
+sha256sums_aarch64=('REPLACE_ME')
+
+package() {
+  cd "$srcdir"
+
+  if [[ "$CARCH" == "x86_64" ]]; then
+    tar -xzf "${_pkgname}-linux-amd64.tar.gz"
+  else
+    tar -xzf "${_pkgname}-linux-arm64.tar.gz"
+  fi
+
+  install -Dm755 "logcheck-filter" "$pkgdir/usr/bin/logcheck-filter"
+
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/docs/man/logcheck-filter.1" \
+    "$pkgdir/usr/share/man/man1/logcheck-filter.1"
+
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/README.md" \
+    "$pkgdir/usr/share/doc/$pkgname/README.md"
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/docs/cli-reference.md" \
+    "$pkgdir/usr/share/doc/$pkgname/cli-reference.md"
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/sample-systemd-rules.txt" \
+    "$pkgdir/usr/share/doc/$pkgname/examples/sample-systemd-rules.txt"
+
+  install -Dm644 "$srcdir/${_srcname}-${pkgver}/LICENSE.md" \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
