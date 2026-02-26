@@ -70,7 +70,7 @@ jobs:
             bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-logcheck-filter.outputs.pkgfile }}"
 
       - name: Upload logcheck-filter package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: logcheck-filter-pkg-${{ github.run_id }}
           path: ${{ steps.build-logcheck-filter.outputs.pkgfile }}
@@ -135,7 +135,7 @@ jobs:
             bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-fluent-bit-filter.outputs.pkgfile }}"
 
       - name: Upload fluent-bit-logcheck-filter package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: fluent-bit-logcheck-filter-pkg-${{ github.run_id }}
           path: ${{ steps.build-fluent-bit-filter.outputs.pkgfile }}
@@ -163,7 +163,7 @@ jobs:
             bash -lc "pacman -Sy --noconfirm namcap && namcap ${{ steps.build-logcheck-database.outputs.pkgfile }}"
 
       - name: Upload logcheck-database package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: logcheck-database-pkg-${{ github.run_id }}
           path: ${{ steps.build-logcheck-database.outputs.pkgfile }}
@@ -281,7 +281,7 @@ jobs:
             }
 
       - name: Archive package summary
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: package-build-summary
           path: package-summary.md
