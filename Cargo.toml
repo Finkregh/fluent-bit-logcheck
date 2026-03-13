@@ -57,7 +57,7 @@ thiserror = "2"
 colored = "3"
 
 # TUI dependencies (for analyzer mode)
-ratatui = { version = "0.28", optional = true }
+ratatui = { version = "0.30", optional = true }
 crossterm = { version = "0.28", optional = true }
 
 # Regex generation from examples
