@@ -96,7 +96,7 @@ jobs:
           dotnet-quality: 'ga'
 
       - name: ReportGenerator
-        uses: danielpalme/ReportGenerator-GitHub-Action@v5.5.3
+        uses: danielpalme/ReportGenerator-GitHub-Action@v5.5.4
         with:
           reports: target/coverage/cobertura.xml
           targetdir: target/coverage/report
