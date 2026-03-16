@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["extract_prefix","group_and_generate"],"struct":["PatternGroup"]};
