@@ -58,7 +58,7 @@ colored = "3"
 
 # TUI dependencies (for analyzer mode)
 ratatui = { version = "0.28", optional = true }
-crossterm = { version = "0.28", optional = true }
+crossterm = { version = "0.29", optional = true }
 
 # Regex generation from examples
 grex = "1.4"
