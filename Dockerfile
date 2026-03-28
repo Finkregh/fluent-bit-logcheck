@@ -3,7 +3,7 @@
 # Builds for native architecture only (linux/amd64 on GitHub Actions CI)
 
 #ARG RUST_VERSION=1.88
-FROM rust:1.94.0-slim AS chef
+FROM rust:1.94.1-slim AS chef
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
