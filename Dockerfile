@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.22
+# syntax=docker/dockerfile:1.23
 # Multi-stage build for logcheck-fluent-bit-filter using cargo-chef for optimal caching
 # Builds for native architecture only (linux/amd64 on GitHub Actions CI)
 
