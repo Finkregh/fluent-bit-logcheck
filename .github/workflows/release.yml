@@ -22,7 +22,7 @@ jobs:
 
       - name: Create GitHub Release
         id: create_release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
@@ -72,7 +72,7 @@ jobs:
           mv ${{ matrix.archive-name }} ${{ github.workspace }}/
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ matrix.archive-name }}
 
@@ -108,7 +108,7 @@ jobs:
           mv ${{ matrix.archive-name }} ${{ github.workspace }}/
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ matrix.archive-name }}
 
@@ -133,6 +133,6 @@ jobs:
           mv fluentbit-wasm-filter.tar.gz ${{ github.workspace }}/
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: fluentbit-wasm-filter.tar.gz
