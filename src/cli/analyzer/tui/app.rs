@@ -451,7 +451,10 @@ pub fn run_analyzer(patterns: Vec<PatternGroup>, log_entries: &[String]) -> Resu
     }
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<Option<String>> {
+fn run_app<B: Backend<Error: Send + Sync + 'static>>(
+    terminal: &mut Terminal<B>,
+    mut app: App,
+) -> Result<Option<String>> {
     loop {
         terminal.draw(|f| ui(f, &app))?;
 
