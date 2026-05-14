@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["run_analyzer"],"mod":["app","pattern_list","preview","save_dialog"]};

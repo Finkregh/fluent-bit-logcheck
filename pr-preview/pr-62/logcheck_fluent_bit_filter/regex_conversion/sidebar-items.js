@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["ensure_anchors","modern_to_posix","posix_to_modern","posix_to_rust","remove_anchors"],"static":["POSIX_ONLY_CONVERSIONS","REGEX_CONVERSIONS"],"struct":["RegexConversion"]};

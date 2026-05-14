@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["pattern_grouper","rule_writer","tui"],"struct":["UnmatchedCollector"]};
