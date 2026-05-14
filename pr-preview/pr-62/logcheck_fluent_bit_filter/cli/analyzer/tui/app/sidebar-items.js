@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["AlternationSource","AppState","EditMode","FocusBox","ModalSource","ReplacementType"],"fn":["build_alternation","build_regex_from_spans","find_word_span","inject_cursor","is_word_char","replacement_for_span","run_analyzer","run_app","ui"],"struct":["App","EditSpan"]};
