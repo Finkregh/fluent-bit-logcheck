@@ -462,15 +462,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<Optio
                     KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         return Ok(None)
                     }
-                    KeyCode::Char('e') => {
-                        if app.focused == FocusBox::Patterns {
-                            app.enter_edit_mode();
-                        }
+                    KeyCode::Char('e') if app.focused == FocusBox::Patterns => {
+                        app.enter_edit_mode();
                     }
-                    KeyCode::Char('x') => {
-                        if app.edit_mode == EditMode::Editing {
-                            app.exit_edit_mode();
-                        }
+                    KeyCode::Char('x') if app.edit_mode == EditMode::Editing => {
+                        app.exit_edit_mode();
                     }
                     KeyCode::Tab => app.focus_next(),
                     KeyCode::BackTab => app.focus_prev(),
@@ -503,60 +499,58 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<Optio
                             app.scroll_preview_up()
                         }
                     }
-                    KeyCode::PageDown => {
-                        if app.focused == FocusBox::Preview {
-                            app.scroll_preview_down()
-                        }
+                    KeyCode::PageDown if app.focused == FocusBox::Preview => {
+                        app.scroll_preview_down()
                     }
-                    KeyCode::PageUp => {
-                        if app.focused == FocusBox::Preview {
-                            app.scroll_preview_up()
-                        }
+                    KeyCode::PageUp if app.focused == FocusBox::Preview => app.scroll_preview_up(),
+                    KeyCode::Enter if app.focused == FocusBox::Patterns => app.open_save_dialog(),
+                    KeyCode::Char('m')
+                        if app.edit_mode == EditMode::Editing
+                            && app.focused == FocusBox::Patterns =>
+                    {
+                        app.toggle_span_at_cursor();
                     }
-                    KeyCode::Enter => {
-                        if app.focused == FocusBox::Patterns {
-                            app.open_save_dialog()
-                        }
+                    KeyCode::Char('r')
+                        if app.edit_mode == EditMode::Editing
+                            && app.focused == FocusBox::Patterns =>
+                    {
+                        app.cycle_span_replacement();
                     }
-                    KeyCode::Char('m') => {
-                        if app.edit_mode == EditMode::Editing && app.focused == FocusBox::Patterns {
-                            app.toggle_span_at_cursor();
-                        }
+                    KeyCode::Char('1')
+                        if app.edit_mode == EditMode::Editing
+                            && app.focused == FocusBox::Patterns =>
+                    {
+                        app.set_span_replacement(ReplacementType::Wildcard);
                     }
-                    KeyCode::Char('r') => {
-                        if app.edit_mode == EditMode::Editing && app.focused == FocusBox::Patterns {
-                            app.cycle_span_replacement();
-                        }
+                    KeyCode::Char('2')
+                        if app.edit_mode == EditMode::Editing
+                            && app.focused == FocusBox::Patterns =>
+                    {
+                        app.set_span_replacement(ReplacementType::Word);
                     }
-                    KeyCode::Char('1') => {
-                        if app.edit_mode == EditMode::Editing && app.focused == FocusBox::Patterns {
-                            app.set_span_replacement(ReplacementType::Wildcard);
-                        }
+                    KeyCode::Char('3')
+                        if app.edit_mode == EditMode::Editing
+                            && app.focused == FocusBox::Patterns =>
+                    {
+                        app.set_span_replacement(ReplacementType::Digit);
                     }
-                    KeyCode::Char('2') => {
-                        if app.edit_mode == EditMode::Editing && app.focused == FocusBox::Patterns {
-                            app.set_span_replacement(ReplacementType::Word);
-                        }
+                    KeyCode::Char('4')
+                        if app.edit_mode == EditMode::Editing
+                            && app.focused == FocusBox::Patterns =>
+                    {
+                        app.set_span_replacement(ReplacementType::NonSpace);
                     }
-                    KeyCode::Char('3') => {
-                        if app.edit_mode == EditMode::Editing && app.focused == FocusBox::Patterns {
-                            app.set_span_replacement(ReplacementType::Digit);
-                        }
+                    KeyCode::Char('5')
+                        if app.edit_mode == EditMode::Editing
+                            && app.focused == FocusBox::Patterns =>
+                    {
+                        app.set_span_replacement(ReplacementType::Alternation);
                     }
-                    KeyCode::Char('4') => {
-                        if app.edit_mode == EditMode::Editing && app.focused == FocusBox::Patterns {
-                            app.set_span_replacement(ReplacementType::NonSpace);
-                        }
-                    }
-                    KeyCode::Char('5') => {
-                        if app.edit_mode == EditMode::Editing && app.focused == FocusBox::Patterns {
-                            app.set_span_replacement(ReplacementType::Alternation);
-                        }
-                    }
-                    KeyCode::Char('t') => {
-                        if app.edit_mode == EditMode::Editing && app.focused == FocusBox::Patterns {
-                            app.toggle_alternation_source();
-                        }
+                    KeyCode::Char('t')
+                        if app.edit_mode == EditMode::Editing
+                            && app.focused == FocusBox::Patterns =>
+                    {
+                        app.toggle_alternation_source();
                     }
                     KeyCode::Char(' ') => app.open_modal_for_selected(),
                     _ => {}
@@ -575,65 +569,50 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<Optio
                                     app.cancel_save();
                                 }
                             }
-                            KeyCode::Char('e') => {
-                                if !save_dialog.is_editing() {
-                                    save_dialog.start_edit();
-                                }
+                            KeyCode::Char('e') if !save_dialog.is_editing() => {
+                                save_dialog.start_edit();
+                            }
+                            KeyCode::Left if save_dialog.is_editing() => {
+                                save_dialog.cursor_left();
                             }
                             KeyCode::Left => {
-                                if save_dialog.is_editing() {
-                                    save_dialog.cursor_left();
-                                } else {
-                                    save_dialog.category_left();
-                                }
+                                save_dialog.category_left();
+                            }
+                            KeyCode::Right if save_dialog.is_editing() => {
+                                save_dialog.cursor_right();
                             }
                             KeyCode::Right => {
-                                if save_dialog.is_editing() {
-                                    save_dialog.cursor_right();
+                                save_dialog.category_right();
+                            }
+                            KeyCode::Char(c) if save_dialog.is_editing() => {
+                                save_dialog.add_char(c);
+                            }
+                            KeyCode::Backspace if save_dialog.is_editing() => {
+                                save_dialog.backspace();
+                            }
+                            KeyCode::Delete if save_dialog.is_editing() => {
+                                save_dialog.delete();
+                            }
+                            KeyCode::Enter if !save_dialog.is_editing() => {
+                                let pattern = save_dialog.pattern().to_string();
+                                let category = save_dialog.selected_category();
+                                let match_count = if app.selected_pattern < app.patterns.len() {
+                                    app.patterns[app.selected_pattern].match_count
                                 } else {
-                                    save_dialog.category_right();
-                                }
-                            }
-                            KeyCode::Char(c) => {
-                                if save_dialog.is_editing() {
-                                    save_dialog.add_char(c);
-                                }
-                            }
-                            KeyCode::Backspace => {
-                                if save_dialog.is_editing() {
-                                    save_dialog.backspace();
-                                }
-                            }
-                            KeyCode::Delete => {
-                                if save_dialog.is_editing() {
-                                    save_dialog.delete();
-                                }
-                            }
-                            KeyCode::Enter => {
-                                if !save_dialog.is_editing() {
-                                    // Save the pattern
-                                    let pattern = save_dialog.pattern().to_string();
-                                    let category = save_dialog.selected_category();
-                                    let match_count = if app.selected_pattern < app.patterns.len() {
-                                        app.patterns[app.selected_pattern].match_count
-                                    } else {
-                                        0
-                                    };
+                                    0
+                                };
 
-                                    let writer = RuleWriter::with_default_config();
-                                    match writer.save_rule(category, &pattern, match_count) {
-                                        Ok(path) => {
-                                            let success_msg = format!(
-                                                "Rule saved successfully to: {}",
-                                                path.display()
-                                            );
-                                            return Ok(Some(success_msg));
-                                        }
-                                        Err(_) => {
-                                            // For now, just cancel the dialog on error
-                                            // Later we can improve error display
-                                            app.cancel_save();
-                                        }
+                                let writer = RuleWriter::with_default_config();
+                                match writer.save_rule(category, &pattern, match_count) {
+                                    Ok(path) => {
+                                        let success_msg = format!(
+                                            "Rule saved successfully to: {}",
+                                            path.display()
+                                        );
+                                        return Ok(Some(success_msg));
+                                    }
+                                    Err(_) => {
+                                        app.cancel_save();
                                     }
                                 }
                             }

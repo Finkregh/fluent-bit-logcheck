@@ -103,7 +103,7 @@ pub fn group_and_generate(entries: &[String], min_group_size: usize) -> Result<V
     }
 
     // Sort by match count (descending)
-    pattern_groups.sort_by(|a, b| b.match_count.cmp(&a.match_count));
+    pattern_groups.sort_by_key(|g| std::cmp::Reverse(g.match_count));
 
     Ok(pattern_groups)
 }
