@@ -11,6 +11,7 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  # ─── Stage 1: Lint (must pass before anything else compiles) ───────────
   format:
     name: Format Check
     runs-on: ubuntu-latest
@@ -42,9 +43,11 @@ jobs:
       - name: Run Clippy Check
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+  # ─── Stage 2: Tests (only if lint passes) ─────────────────────────────
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+    needs: [format, clippy]
     steps:
       - uses: actions/checkout@v6
 
@@ -54,6 +57,110 @@ jobs:
 
       - name: Run tests
         run: cargo test --all-features --target x86_64-unknown-linux-gnu
+
+  test-rules:
+    name: Test Logcheck Rules
+    runs-on: ubuntu-latest
+    needs: [format, clippy]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-unknown-unknown
+
+      - name: Install logcheck-database package
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y logcheck-database
+
+      - name: Create test with production rules
+        run: |
+          cat > src/ci_test.rs << 'EOF'
+          #[cfg(test)]
+          #[test]
+          fn test_load_system_logcheck_rules() {
+              use crate::rules::LogcheckDatabase;
+
+              let rules_path = std::path::Path::new("/etc/logcheck");
+
+              if !rules_path.exists() {
+                  println!("⚠️  Skipping - /etc/logcheck not found in CI");
+                  return;
+              }
+
+              println!("📂 Loading rules from: {}", rules_path.display());
+
+              match LogcheckDatabase::load_from_directory(rules_path) {
+                  Ok(database) => {
+                      let stats = database.get_stats();
+                      println!("\n✅ Successfully loaded production rules!");
+                      println!("📊 Statistics:");
+                      for (category, count) in stats.iter() {
+                          println!("  - {}: {}", category, count);
+                      }
+
+                      // Test with sample messages
+                      let test_messages = vec![
+                          ("sshd[1234]: Failed password for root", "SSH auth failure"),
+                          ("systemd[1]: Started Session 42", "SystemD session"),
+                          ("MyApp: Custom message", "Unclassified"),
+                      ];
+
+                      println!("\n🧪 Testing rule matching:");
+                      for (msg, desc) in test_messages {
+                          let result = database.match_message(msg);
+                          println!("  {} - {:?}", desc, result);
+                      }
+                  }
+                  Err(e) => {
+                      eprintln!("❌ Error loading rules: {:?}", e);
+                      panic!("Failed to load production logcheck rules");
+                  }
+              }
+          }
+          EOF
+
+          # Add module to lib.rs
+          if ! grep -q "mod ci_test;" src/lib.rs; then
+            {
+              echo ""
+              echo "#[cfg(test)]"
+              echo "mod ci_test;"
+            } >> src/lib.rs
+          fi
+
+      - name: Run logcheck rules tests
+        run: cargo xtask test-rules
+
+      - name: Generate test report
+        if: always()
+        run: |
+          {
+            echo "## Logcheck Rules Test Report"
+            echo ""
+            echo "### Rule Loading"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -d /etc/logcheck ]; then
+            {
+              echo "✅ logcheck-database package installed successfully"
+              echo ""
+              echo "### Rule Statistics"
+              echo ""
+              echo "| Category | File Count |"
+              echo "|----------|------------|"
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            for dir in cracking.d violations.d violations.ignore.d ignore.d.server ignore.d.workstation; do
+              if [ -d /etc/logcheck/$dir ]; then
+                count=$(find /etc/logcheck/$dir -type f | wc -l)
+                echo "| $dir | $count |" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+          else
+            echo "❌ logcheck-database not found" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   coverage:
     name: Code Coverage
@@ -117,12 +224,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Comment out codecov upload as requested
-      # - name: Upload to codecov.io
-      #   uses: codecov/codecov-action@v4
-      #   with:
-      #     file: target/coverage/cobertura.xml
-
       - name: Archive coverage results
         uses: actions/upload-artifact@v7
         if: always()
@@ -134,22 +235,11 @@ jobs:
             target/coverage/report/
           retention-days: 30
 
-  security-audit:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Security Audit
-        uses: rustsec/audit-check@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
+  # ─── Stage 3: Builds (only if tests pass) ─────────────────────────────
   build-cli:
     name: Build CLI - ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
-    needs: [format, clippy, test, coverage]
+    needs: [test, coverage]
     strategy:
       fail-fast: false
       matrix:
@@ -202,7 +292,7 @@ jobs:
   build-wasm:
     name: Build WASM Filter
     runs-on: ubuntu-latest
-    needs: [format, clippy, test, coverage]
+    needs: [test, coverage]
     steps:
       - uses: actions/checkout@v6
 
@@ -219,3 +309,100 @@ jobs:
           name: fluentbit-wasm-filter
           path: target/wasm32-unknown-unknown/release/logcheck_fluent_bit_filter.wasm
           retention-days: 30
+
+  docs-preview:
+    name: Documentation Preview
+    runs-on: ubuntu-latest
+    needs: [test, coverage]
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+      pull-requests: write
+    concurrency: preview-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-unknown-unknown
+
+      - name: Build documentation with xtask
+        run: cargo xtask docs
+        env:
+          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+
+      - name: Generate CLI documentation
+        run: cargo build --release --bin logcheck-filter
+
+      - name: Integrate documentation
+        run: |
+          mkdir -p target/doc/cli
+          cp -r docs/* target/doc/cli/
+
+          cat > target/doc/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>logcheck-filter Documentation</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+                  .container { background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 800px; width: 100%; padding: 48px; }
+                  h1 { font-size: 2.5rem; margin-bottom: 16px; color: #2d3748; }
+                  .subtitle { font-size: 1.125rem; color: #718096; margin-bottom: 40px; }
+                  nav ul { list-style: none; }
+                  nav li { margin-bottom: 16px; }
+                  nav a { display: flex; align-items: center; padding: 20px 24px; background: #f7fafc; border: 2px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #2d3748; font-size: 1.125rem; font-weight: 500; transition: all 0.2s ease; }
+                  nav a:hover { background: #edf2f7; border-color: #667eea; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.2); }
+                  nav a .emoji { font-size: 1.5rem; margin-right: 16px; }
+                  nav a .text { flex: 1; }
+                  nav a .description { display: block; font-size: 0.875rem; color: #718096; font-weight: 400; margin-top: 4px; }
+                  .footer { margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0; text-align: center; color: #718096; font-size: 0.875rem; }
+                  .footer a { color: #667eea; text-decoration: none; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>logcheck-filter Documentation</h1>
+                  <p class="subtitle">Fluent-Bit WASM filter and CLI tool for filtering logs using logcheck rules</p>
+                  <nav><ul>
+                      <li><a href="logcheck_fluent_bit_filter/index.html"><span class="emoji">📚</span><span class="text">API Documentation<span class="description">Rust API reference for the WASM filter library</span></span></a></li>
+                      <li><a href="cli/cli-reference.html"><span class="emoji">⚙️</span><span class="text">CLI Reference<span class="description">Command-line interface usage and examples</span></span></a></li>
+                      <li><a href="cli/man/"><span class="emoji">📖</span><span class="text">Man Pages<span class="description">Traditional Unix manual pages</span></span></a></li>
+                  </ul></nav>
+                  <div class="footer"><p>Built with ❤️ using Rust | <a href="https://github.com/finkregh/fluent-bit-logcheck" target="_blank">View on GitHub</a></p></div>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Deploy PR preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: target/doc
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: auto
+          wait-for-pages-deployment: true
+          qr-code: true
+          comment: true
+          token: ${{ github.token }}
+
+  # ─── Standalone checks (no compilation needed) ────────────────────────
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    premissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Security Audit
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
