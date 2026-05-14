@@ -1,0 +1,71 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH logcheck-filter 1  "logcheck-filter 0.0.3" 
+.SH NAME
+logcheck\-filter \- Filter logs using logcheck rules
+.SH SYNOPSIS
+\fBlogcheck\-filter\fR <\fB\-\-rules\fR> [\fB\-\-format\fR] [\fB\-\-show\fR] [\fB\-\-stats\fR] [\fB\-\-color\fR] [\fB\-\-output\-file\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIsubcommands\fR>
+.SH DESCRIPTION
+Filter logs using logcheck rules
+.SH OPTIONS
+.TP
+\fB\-\-rules\fR \fI<RULES>\fR
+Path to logcheck rules directory
+.TP
+\fB\-\-format\fR \fI<FORMAT>\fR [default: text]
+Output format
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+text: Human\-readable text format
+.IP \(bu 2
+json: JSON format
+.RE
+.TP
+\fB\-\-show\fR \fI<SHOW>\fR [default: all]
+What entries to show
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+all: Show all log entries
+.IP \(bu 2
+violations: Show only violations (cracking/violations)
+.IP \(bu 2
+unmatched: Show only unmatched entries
+.RE
+.TP
+\fB\-\-stats\fR
+Show processing statistics
+.TP
+\fB\-\-color\fR
+Enable colored output
+.TP
+\fB\-\-output\-file\fR \fI<OUTPUT_FILE>\fR
+Write filtered logs to file
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH SUBCOMMANDS
+.TP
+logcheck\-filter\-file(1)
+Read from a file
+.TP
+logcheck\-filter\-stdin(1)
+Read from standard input
+.TP
+logcheck\-filter\-journald(1)
+Read from systemd journal
+.TP
+logcheck\-filter\-help(1)
+Print this message or the help of the given subcommand(s)
+.SH VERSION
+v0.0.3
