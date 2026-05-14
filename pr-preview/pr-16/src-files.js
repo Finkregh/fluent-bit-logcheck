@@ -1,0 +1,2 @@
+createSrcSidebar('[["logcheck_filter",["",[],["main.rs"]]],["logcheck_fluent_bit_filter",["",[["cli",[["analyzer",[["tui",[],["app.rs","mod.rs","pattern_list.rs","preview.rs","save_dialog.rs"]]],["mod.rs","pattern_grouper.rs","rule_writer.rs"]],["input",[],["file.rs","journald.rs","mod.rs","stdin.rs"]],["output",[],["json.rs","mod.rs","text.rs"]]],["args.rs","mod.rs","processor.rs"]]],["lib.rs","regex_conversion.rs","rules.rs"]]]]');
+//{"start":19,"fragment_lengths":[39,375]}

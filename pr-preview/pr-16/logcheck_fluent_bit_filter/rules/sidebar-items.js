@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CompiledRules","RuleCategory","RuleError"],"struct":["LogcheckDatabase","RuleSet"]};
