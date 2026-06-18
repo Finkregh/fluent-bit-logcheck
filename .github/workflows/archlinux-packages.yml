@@ -15,7 +15,7 @@ jobs:
     name: Build logcheck-filter Package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Update PKGBUILD source reference
         run: |
@@ -80,7 +80,7 @@ jobs:
     name: Build fluent-bit-logcheck-filter Package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Update PKGBUILD source reference
         run: |
@@ -145,7 +145,7 @@ jobs:
     name: Build logcheck-database Package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Build logcheck-database package
         uses: ouuan/pkgbuild-action@master
@@ -183,7 +183,7 @@ jobs:
       contents: read
       pull-requests: write # Required for PR comments
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Generate package summary
         run: |
